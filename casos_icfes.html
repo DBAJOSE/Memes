@@ -7,8 +7,10 @@
 <style>
   :root{
     --bg:#07080c; --frame:#15171d; --frame2:#0c0e13;
-    --screen:#0d1418; --bar:#111c22; --hdr:#14232b;
-    --me:#0b5f4a; --ai:#1c2b33; --txt:#e9f3f7; --muted:#8aa2ad;
+    /* paleta de ChatGPT en modo oscuro */
+    --screen:#212121; --bar:#212121; --hdr:#212121;
+    --me:#303030; --pill:#303030; --txt:#ececec; --muted:#9b9b9b; --faint:#7d7d7d;
+    /* acentos: solo para las cortinillas y tarjetas del vídeo, no para la app */
     --accent:#22d3a6; --accent2:#37c2ff; --gold:#ffcf3f; --bad:#ff5a5a;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -59,103 +61,112 @@
 
   .statusbar{
     flex:0 0 auto;height:38px;display:flex;align-items:center;justify-content:space-between;
-    padding:0 20px;font-size:13px;font-weight:600;color:#cfe2ea;background:transparent;
+    padding:0 20px;font-size:13px;font-weight:600;color:var(--txt);background:transparent;
   }
   .statusbar .right{display:flex;align-items:center;gap:7px}
   .sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}
-  .sig i{display:block;width:2.5px;background:#cfe2ea;border-radius:1px}
+  .sig i{display:block;width:2.5px;background:var(--txt);border-radius:1px}
   .sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}
   .sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:11px}
-  .sig.dead i{background:#4a5a63}
+  .sig.dead i{background:#5a5a5a}
   .battwrap{display:inline-flex;align-items:center;gap:3px;font-size:12px}
-  .batt{position:relative;width:24px;height:12px;border:1.5px solid #cfe2ea;border-radius:3px}
-  .batt::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:6px;background:#cfe2ea;border-radius:0 1px 1px 0}
-  .batt b{position:absolute;left:1.5px;top:1.5px;bottom:1.5px;display:block;border-radius:1px;background:#7ee0b8}
+  .batt{position:relative;width:24px;height:12px;border:1.5px solid var(--txt);border-radius:3px}
+  .batt::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:6px;background:var(--txt);border-radius:0 1px 1px 0}
+  .batt b{position:absolute;left:1.5px;top:1.5px;bottom:1.5px;display:block;border-radius:1px;background:var(--txt)}
   .batt.low b{background:var(--bad)}
   .batt.low{border-color:var(--bad)}
   .statusbar.low .battwrap{color:var(--bad)}
 
+  /* cabecera de ChatGPT: menú · "ChatGPT ⌄" centrado · chat nuevo */
   .apphdr{
-    flex:0 0 auto;height:60px;display:flex;align-items:center;gap:11px;padding:0 16px;
-    background:var(--hdr);border-bottom:1px solid #1e3540;
+    flex:0 0 auto;height:54px;display:flex;align-items:center;padding:0 14px;
+    background:var(--hdr);
   }
-  .apphdr .back{color:#9fc4d2;font-size:22px;line-height:1;margin-right:-2px}
-  .apphdr .av{
-    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    display:flex;align-items:center;justify-content:center;font-size:18px;color:#04121a;font-weight:800;
+  .apphdr .icn{width:34px;height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .apphdr .icn svg{width:23px;height:23px;fill:none;stroke:var(--txt);stroke-width:1.9;
+                   stroke-linecap:round;stroke-linejoin:round}
+  .apphdr .title{
+    flex:1 1 auto;text-align:center;font-size:17px;font-weight:600;color:var(--txt);
+    letter-spacing:-.2px;display:flex;align-items:center;justify-content:center;gap:5px;
   }
-  .apphdr .who{display:flex;flex-direction:column;line-height:1.25}
-  .apphdr .who b{font-size:15.5px;font-weight:700}
-  .apphdr .who span{font-size:11.5px;color:#79a3b3}
-  .apphdr .dots{margin-left:auto;color:#79a3b3;font-size:19px;letter-spacing:2px}
+  .apphdr .title i{font-style:normal;font-size:12px;color:var(--muted);transform:translateY(1px)}
 
-  /* los mensajes se apoyan abajo, como en un chat de verdad */
+  /* los mensajes se apoyan abajo */
   #chat{
-    flex:1 1 auto;overflow:hidden;padding:14px 14px 8px;
-    display:flex;flex-direction:column;justify-content:flex-end;gap:9px;
+    flex:1 1 auto;overflow:hidden;padding:14px 16px 10px;
+    display:flex;flex-direction:column;justify-content:flex-end;gap:18px;
   }
   .row{display:flex;width:100%}
   .row.me{justify-content:flex-end}
-  .bub{
-    max-width:80%;padding:10px 13px;border-radius:17px;font-size:15.5px;line-height:1.38;
-    word-wrap:break-word;position:relative;
-  }
-  .row.me .bub{background:var(--me);border-bottom-right-radius:5px;color:#eafff8}
-  .row.ai .bub{background:var(--ai);border-bottom-left-radius:5px}
-  .bub .t{display:block;font-size:10.5px;color:rgba(255,255,255,.42);text-align:right;margin-top:3px}
-  .typing{display:inline-flex;gap:5px;align-items:center;padding:4px 2px}
-  .typing i{width:7px;height:7px;border-radius:50%;background:#7fa5b4;display:block}
+  .bub{font-size:16px;line-height:1.5;word-wrap:break-word;position:relative;color:var(--txt)}
+  /* usuario: globo gris redondeado, alineado a la derecha */
+  .row.me .bub{max-width:78%;padding:11px 16px;border-radius:21px;background:var(--me)}
+  /* asistente: SIN globo, texto plano a todo el ancho (como la app real) */
+  .row.ai .bub{max-width:100%;padding:0;background:none;line-height:1.58}
+  /* "pensando": el punto que late, no los tres puntitos de WhatsApp */
+  .typing{display:inline-flex;align-items:center;padding:2px 0}
+  .typing i{width:15px;height:15px;border-radius:50%;background:var(--txt);display:block}
 
+  /* barra de entrada: una sola píldora con + a la izquierda y la acción a la derecha */
   .inputbar{
-    flex:0 0 auto;min-height:64px;padding:10px 13px 14px;display:flex;align-items:center;gap:9px;
-    background:var(--bar);border-top:1px solid #1c2f38;
+    flex:0 0 auto;min-height:64px;padding:8px 12px 16px;display:flex;align-items:flex-end;
+    background:var(--bar);
+  }
+  .pill{
+    flex:1 1 auto;min-height:48px;border-radius:26px;background:var(--pill);
+    padding:6px 6px 6px 8px;display:flex;align-items:center;gap:6px;
+  }
+  .plus{
+    width:34px;height:34px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;color:var(--txt);font-size:23px;font-weight:300;line-height:1;
   }
   .field{
-    flex:1 1 auto;min-height:40px;border-radius:20px;background:#0b161b;border:1px solid #223a45;
-    padding:9px 14px;font-size:15px;color:var(--txt);display:flex;align-items:center;
+    flex:1 1 auto;padding:2px 2px;font-size:16px;color:var(--txt);display:flex;align-items:center;
+    min-width:0;overflow:hidden;white-space:nowrap;
   }
-  .field.empty{color:#5d7c88}
-  .caret{display:inline-block;width:2px;height:18px;background:var(--accent);margin-left:1px;vertical-align:-3px}
-  .send{
-    width:40px;height:40px;flex:0 0 auto;border-radius:50%;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    display:flex;align-items:center;justify-content:center;color:#04121a;font-size:17px;font-weight:800;
-  }
+  .field.empty{color:var(--faint)}
+  .caret{display:inline-block;width:2px;height:19px;background:var(--txt);margin-left:1px;vertical-align:-3px}
+  /* micrófono cuando no hay texto; flecha blanca cuando sí lo hay */
+  .act{width:36px;height:36px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .act svg{width:20px;height:20px;fill:none;stroke:var(--txt);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .act.send{background:var(--txt);border-radius:50%}
+  .act.send svg{stroke:#0d0d0d;stroke-width:2.4;width:19px;height:19px}
 
   /* ============ OVERLAYS DENTRO DE LA PANTALLA ============ */
   #notif{
-    position:absolute;left:12px;right:12px;top:8px;z-index:8;
-    background:rgba(22,36,44,.97);border:1px solid #2a4a58;border-radius:16px;
+    /* baja por debajo de la barra de estado (38px), como un aviso real */
+    position:absolute;left:12px;right:12px;top:44px;z-index:8;
+    background:rgba(52,52,52,.98);border:1px solid #4a4a4a;border-radius:18px;
     padding:11px 14px;display:flex;align-items:center;gap:11px;
     box-shadow:0 12px 30px rgba(0,0,0,.55);
   }
-  #notif .ic{width:30px;height:30px;border-radius:9px;background:#20323b;display:flex;align-items:center;justify-content:center;font-size:15px}
+  #notif .ic{width:30px;height:30px;border-radius:9px;background:#4a4a4a;display:flex;align-items:center;justify-content:center;font-size:15px}
   #notif .tx{display:flex;flex-direction:column;line-height:1.3}
   #notif .tx b{font-size:13px}
-  #notif .tx span{font-size:12.5px;color:#a9c4ce}
+  #notif .tx span{font-size:12.5px;color:#b4b4b4}
 
   /* leyenda de tiempo: cubre el área del chat (no las burbujas sueltas), así
      nunca se monta encima de un mensaje y se lee como salto temporal */
   #meta{
-    position:absolute;left:0;right:0;top:98px;bottom:64px;z-index:7;
+    /* 92px = barra de estado (38) + cabecera (54); 72px = barra de entrada */
+    position:absolute;left:0;right:0;top:92px;bottom:72px;z-index:7;
     display:flex;align-items:center;justify-content:center;padding:0 26px;
-    background:rgba(5,9,12,.84);
+    background:rgba(20,20,20,.86);
   }
   #meta span{
-    display:inline-block;background:rgba(16,28,34,.95);border:1px solid #2d4b58;
-    padding:9px 18px;border-radius:999px;font-size:14.5px;color:#dcecf3;letter-spacing:.2px;
+    display:inline-block;background:#303030;border:1px solid #4a4a4a;
+    padding:9px 18px;border-radius:999px;font-size:14.5px;color:var(--txt);letter-spacing:.2px;
     text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5);
   }
 
   #battdlg{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;width:270px;
-    background:#16232a;border:1px solid #2c4a57;border-radius:18px;padding:20px 18px;text-align:center;
+    background:#2f2f2f;border:1px solid #474747;border-radius:20px;padding:20px 18px;text-align:center;
     box-shadow:0 20px 50px rgba(0,0,0,.7);
   }
   #battdlg .big{font-size:34px;margin-bottom:6px}
   #battdlg b{display:block;font-size:16px;margin-bottom:4px}
-  #battdlg span{font-size:13px;color:#9fbcc7}
+  #battdlg span{font-size:13px;color:#b4b4b4}
 
   #card{
     position:absolute;inset:0;z-index:10;background:rgba(4,7,9,.93);
@@ -228,17 +239,22 @@
       </div>
 
       <div class="apphdr">
-        <span class="back">‹</span>
-        <span class="av">IA</span>
-        <span class="who"><b>Asistente IA</b><span id="presence">en línea</span></span>
-        <span class="dots">⋮</span>
+        <span class="icn"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>
+        <span class="title">ChatGPT <i>⌄</i></span>
+        <span class="icn"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg></span>
       </div>
 
       <div id="chat"></div>
 
       <div class="inputbar">
-        <div class="field empty" id="field"><span id="fieldtx"></span><span class="caret" id="caret"></span></div>
-        <div class="send">➤</div>
+        <div class="pill">
+          <span class="plus">+</span>
+          <div class="field empty" id="field"><span id="fieldtx"></span><span class="caret" id="caret"></span></div>
+          <span class="act" id="act">
+            <svg id="icMic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+            <svg id="icSend" class="hide" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+          </span>
+        </div>
       </div>
 
       <div id="notif" class="hide"><span class="ic">🔔</span><span class="tx"><b id="notifT"></b><span id="notifS"></span></span></div>
@@ -454,7 +470,8 @@ const D = {
   slate:$("slate"), slateN:$("slateN"), slateT:$("slateT"),
   meme:$("meme"), memeImg:$("memeImg"), memePh:$("memePh"),
   batt:$("batt"), battpct:$("battpct"), statusbar:$("statusbar"),
-  clock:$("clock"), sig:$("sig"), presence:$("presence"), guides:$("guides")
+  clock:$("clock"), sig:$("sig"), guides:$("guides"),
+  act:$("act"), icMic:$("icMic"), icSend:$("icSend")
 };
 
 const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
@@ -552,7 +569,7 @@ function applyState(s){
       const row = document.createElement("div");
       row.className = "row ai";
       row.id = "typingRow";
-      row.innerHTML = '<div class="bub"><span class="typing"><i></i><i></i><i></i></span></div>';
+      row.innerHTML = '<div class="bub"><span class="typing"><i></i></span></div>';
       D.chat.appendChild(row);
     }
   }
@@ -564,25 +581,31 @@ function applyState(s){
     r.style.transform = "translateY(" + ((1 - ease(m.p)) * 12).toFixed(2) + "px)";
   });
   if (s.thinking){
-    const tr = document.getElementById("typingRow");
-    if (tr){
-      const dots = tr.querySelectorAll(".typing i");
-      const ph = Math.floor(s.thinkT / 260) % 3;
-      dots.forEach((d, i) => { d.style.opacity = (i === ph ? 1 : .32).toString(); });
+    /* el punto de ChatGPT late; la fase sale del tiempo, no de una animación CSS */
+    const dot = document.querySelector("#typingRow .typing i");
+    if (dot){
+      const k = .74 + .26 * (.5 + .5 * Math.sin((s.thinkT / 1000) * Math.PI * 1.8));
+      dot.style.transform = "scale(" + k.toFixed(3) + ")";
+      dot.style.opacity = (.5 + .5 * k).toFixed(3);
     }
   }
   D.chat.scrollTop = D.chat.scrollHeight;
 
   /* --- barra de escritura --- */
+  const escribiendo = s.input !== null && s.input.length > 0;
   if (s.input !== null){
     D.fieldtx.textContent = s.input;
     D.field.classList.toggle("empty", s.input.length === 0);
     D.caret.style.opacity = (Math.floor(s.inputT / 480) % 2 === 0) ? "1" : "0";
   } else {
-    D.fieldtx.textContent = "Escribe un mensaje";
+    D.fieldtx.textContent = "Pregunta lo que quieras";
     D.field.classList.add("empty");
     D.caret.style.opacity = "0";
   }
+  /* micrófono ↔ flecha de enviar, igual que en la app */
+  D.act.classList.toggle("send", escribiendo);
+  D.icMic.classList.toggle("hide", escribiendo);
+  D.icSend.classList.toggle("hide", !escribiendo);
 
   /* --- barra de estado --- */
   D.clock.textContent = s.hora;
@@ -591,7 +614,6 @@ function applyState(s){
   D.batt.classList.toggle("low", s.batt <= 20);
   D.statusbar.classList.toggle("low", s.batt <= 20);
   D.sig.classList.toggle("dead", s.dead);
-  D.presence.textContent = s.dead ? "sin conexión" : (s.thinking ? "escribiendo…" : "en línea");
 
   /* --- overlays --- */
   show(D.notif, !!s.notif, () => {
