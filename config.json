@@ -1,0 +1,13 @@
+{
+  "output": "out/casos_icfes.mp4",
+  "sfxGain": 10,
+  "upload": {
+    "title": "",
+    "description": "",
+    "tags": null,
+    "privacy": "private",
+    "categoryId": 23,
+    "language": "es-CO",
+    "madeForKids": false
+  }
+}

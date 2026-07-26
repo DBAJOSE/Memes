@@ -1,0 +1,9 @@
+node_modules/
+out/
+token.json
+client_secret.json
+credentials.json
+.env
+assets/musica.mp3
+assets/meme.jpg
+.DS_Store

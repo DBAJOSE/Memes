@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Casos ICFES · Shorts</title>
+<style>
+  :root{
+    --bg:#07080c; --frame:#15171d; --frame2:#0c0e13;
+    --screen:#0d1418; --bar:#111c22; --hdr:#14232b;
+    --me:#0b5f4a; --ai:#1c2b33; --txt:#e9f3f7; --muted:#8aa2ad;
+    --accent:#22d3a6; --accent2:#37c2ff; --gold:#ffcf3f; --bad:#ff5a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#000;height:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--txt);display:flex;flex-direction:column;align-items:center;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ LIENZO 9:16 ============ */
+  #canvas{
+    position:relative;width:540px;height:960px;flex:0 0 auto;
+    background:
+      radial-gradient(700px 420px at 50% -8%, #16283a 0%, transparent 62%),
+      radial-gradient(600px 400px at 50% 108%, #10262a 0%, transparent 60%),
+      var(--bg);
+    overflow:hidden;transform-origin:top left;
+  }
+
+  /* ============ CELULAR ============ */
+  #phone{
+    position:absolute;left:50%;top:50%;width:464px;height:960px;
+    transform:translate(-50%,-50%);
+    border:10px solid var(--frame);border-radius:46px;
+    background:var(--frame2);
+    box-shadow:0 0 0 2px #24272f, 0 26px 60px rgba(0,0,0,.65), inset 0 0 0 1px #2b2f38;
+  }
+  #canvas.safe #phone{transform:translate(-50%,-50%) scale(.855) translateY(-44px)}
+  #phone .cam{
+    position:absolute;left:50%;top:11px;width:11px;height:11px;margin-left:-5.5px;
+    border-radius:50%;background:#05070a;
+    box-shadow:inset 0 0 0 2px #1e222a, 0 0 6px rgba(0,0,0,.9);z-index:6;
+  }
+  #phone .cam::after{content:"";position:absolute;left:2.5px;top:2px;width:3px;height:3px;border-radius:50%;background:#0f3b4a}
+  .sidebtn{position:absolute;background:#1b1e25;border-radius:3px;box-shadow:inset 0 1px 0 #2b3038}
+  .sb-vol-up{right:-13px;top:190px;width:4px;height:64px}
+  .sb-vol-dn{right:-13px;top:266px;width:4px;height:64px}
+  .sb-power{left:-13px;top:222px;width:4px;height:96px}
+
+  /* ============ PANTALLA ============ */
+  /* pantalla: 464x960 exactos, dentro del marco */
+  #stage{
+    position:absolute;left:0;top:0;width:464px;height:960px;
+    border-radius:38px;overflow:hidden;background:var(--screen);
+    display:flex;flex-direction:column;
+  }
+
+  .statusbar{
+    flex:0 0 auto;height:38px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;font-size:13px;font-weight:600;color:#cfe2ea;background:transparent;
+  }
+  .statusbar .right{display:flex;align-items:center;gap:7px}
+  .sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}
+  .sig i{display:block;width:2.5px;background:#cfe2ea;border-radius:1px}
+  .sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}
+  .sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:11px}
+  .sig.dead i{background:#4a5a63}
+  .battwrap{display:inline-flex;align-items:center;gap:3px;font-size:12px}
+  .batt{position:relative;width:24px;height:12px;border:1.5px solid #cfe2ea;border-radius:3px}
+  .batt::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:6px;background:#cfe2ea;border-radius:0 1px 1px 0}
+  .batt b{position:absolute;left:1.5px;top:1.5px;bottom:1.5px;display:block;border-radius:1px;background:#7ee0b8}
+  .batt.low b{background:var(--bad)}
+  .batt.low{border-color:var(--bad)}
+  .statusbar.low .battwrap{color:var(--bad)}
+
+  .apphdr{
+    flex:0 0 auto;height:60px;display:flex;align-items:center;gap:11px;padding:0 16px;
+    background:var(--hdr);border-bottom:1px solid #1e3540;
+  }
+  .apphdr .back{color:#9fc4d2;font-size:22px;line-height:1;margin-right:-2px}
+  .apphdr .av{
+    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-size:18px;color:#04121a;font-weight:800;
+  }
+  .apphdr .who{display:flex;flex-direction:column;line-height:1.25}
+  .apphdr .who b{font-size:15.5px;font-weight:700}
+  .apphdr .who span{font-size:11.5px;color:#79a3b3}
+  .apphdr .dots{margin-left:auto;color:#79a3b3;font-size:19px;letter-spacing:2px}
+
+  /* los mensajes se apoyan abajo, como en un chat de verdad */
+  #chat{
+    flex:1 1 auto;overflow:hidden;padding:14px 14px 8px;
+    display:flex;flex-direction:column;justify-content:flex-end;gap:9px;
+  }
+  .row{display:flex;width:100%}
+  .row.me{justify-content:flex-end}
+  .bub{
+    max-width:80%;padding:10px 13px;border-radius:17px;font-size:15.5px;line-height:1.38;
+    word-wrap:break-word;position:relative;
+  }
+  .row.me .bub{background:var(--me);border-bottom-right-radius:5px;color:#eafff8}
+  .row.ai .bub{background:var(--ai);border-bottom-left-radius:5px}
+  .bub .t{display:block;font-size:10.5px;color:rgba(255,255,255,.42);text-align:right;margin-top:3px}
+  .typing{display:inline-flex;gap:5px;align-items:center;padding:4px 2px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:#7fa5b4;display:block}
+
+  .inputbar{
+    flex:0 0 auto;min-height:64px;padding:10px 13px 14px;display:flex;align-items:center;gap:9px;
+    background:var(--bar);border-top:1px solid #1c2f38;
+  }
+  .field{
+    flex:1 1 auto;min-height:40px;border-radius:20px;background:#0b161b;border:1px solid #223a45;
+    padding:9px 14px;font-size:15px;color:var(--txt);display:flex;align-items:center;
+  }
+  .field.empty{color:#5d7c88}
+  .caret{display:inline-block;width:2px;height:18px;background:var(--accent);margin-left:1px;vertical-align:-3px}
+  .send{
+    width:40px;height:40px;flex:0 0 auto;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;color:#04121a;font-size:17px;font-weight:800;
+  }
+
+  /* ============ OVERLAYS DENTRO DE LA PANTALLA ============ */
+  #notif{
+    position:absolute;left:12px;right:12px;top:8px;z-index:8;
+    background:rgba(22,36,44,.97);border:1px solid #2a4a58;border-radius:16px;
+    padding:11px 14px;display:flex;align-items:center;gap:11px;
+    box-shadow:0 12px 30px rgba(0,0,0,.55);
+  }
+  #notif .ic{width:30px;height:30px;border-radius:9px;background:#20323b;display:flex;align-items:center;justify-content:center;font-size:15px}
+  #notif .tx{display:flex;flex-direction:column;line-height:1.3}
+  #notif .tx b{font-size:13px}
+  #notif .tx span{font-size:12.5px;color:#a9c4ce}
+
+  #meta{
+    position:absolute;left:0;right:0;bottom:86px;z-index:7;text-align:center;padding:0 22px;
+  }
+  #meta span{
+    display:inline-block;background:rgba(6,10,13,.82);border:1px solid #27414c;
+    padding:7px 15px;border-radius:999px;font-size:13.5px;color:#cfe6ee;letter-spacing:.2px;
+  }
+
+  #battdlg{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;width:270px;
+    background:#16232a;border:1px solid #2c4a57;border-radius:18px;padding:20px 18px;text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.7);
+  }
+  #battdlg .big{font-size:34px;margin-bottom:6px}
+  #battdlg b{display:block;font-size:16px;margin-bottom:4px}
+  #battdlg span{font-size:13px;color:#9fbcc7}
+
+  #card{
+    position:absolute;inset:0;z-index:10;background:rgba(4,7,9,.93);
+    display:flex;align-items:center;justify-content:center;padding:34px;
+  }
+  #card b{
+    font-size:44px;font-weight:900;text-align:center;line-height:1.1;letter-spacing:-.5px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2) 55%,var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  #off{position:absolute;inset:0;z-index:12;background:#000}
+
+  /* ============ CORTINILLA (fuera del celular) ============ */
+  #slate{
+    position:absolute;inset:0;z-index:20;background:#04060a;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;
+  }
+  #slate .n{
+    font-size:15px;letter-spacing:7px;text-transform:uppercase;font-weight:800;color:var(--accent);
+  }
+  #slate .ti{
+    font-size:40px;font-weight:900;text-align:center;line-height:1.12;letter-spacing:-.6px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2) 55%,var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  #slate .bar{height:3px;width:70px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--gold))}
+
+  /* ============ IMAGEN ENTRE CASOS ============ */
+  #meme{position:absolute;inset:0;z-index:19;background:#000;display:flex;align-items:center;justify-content:center}
+  #meme img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+  #meme .ph{color:#3d4c57;font-size:14px;text-align:center;padding:30px;line-height:1.6}
+
+  .hide{display:none !important}
+
+  /* ============ GUÍAS Y CONTROLES (no salen en el render) ============ */
+  #guides{position:absolute;inset:0;z-index:30;pointer-events:none}
+  #guides .g{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,90,90,.5)}
+  #guides .lbl{position:absolute;right:6px;font-size:10px;color:rgba(255,120,120,.8);background:rgba(0,0,0,.5);padding:1px 5px;border-radius:4px}
+  #bar{
+    display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;
+    padding:12px;background:#0b0e14;width:100%;max-width:760px;
+  }
+  #bar button,#bar label{
+    border:1px solid #2b3a52;background:#131c2d;color:#dbe6f5;padding:8px 13px;border-radius:999px;
+    font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  #bar button:hover{background:#1b2740;border-color:var(--accent)}
+  #bar button.pri{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#04121a;border:none}
+  #bar .sp{color:#63748f;font-size:11.5px;margin-left:4px}
+  #bar input[type=file]{display:none}
+  #scrub{width:100%;max-width:520px;accent-color:#22d3a6}
+</style>
+</head>
+<body>
+
+<div id="canvas" class="safe">
+  <div id="phone">
+    <div class="cam"></div>
+    <div class="sidebtn sb-vol-up"></div>
+    <div class="sidebtn sb-vol-dn"></div>
+    <div class="sidebtn sb-power"></div>
+
+    <div id="stage">
+      <div class="statusbar" id="statusbar">
+        <div class="left" id="clock">11:52</div>
+        <div class="right">
+          <span class="sig" id="sig"><i></i><i></i><i></i><i></i></span>
+          <span class="battwrap"><span class="batt" id="batt"><b></b></span><span id="battpct">100%</span></span>
+        </div>
+      </div>
+
+      <div class="apphdr">
+        <span class="back">‹</span>
+        <span class="av">IA</span>
+        <span class="who"><b>Asistente IA</b><span id="presence">en línea</span></span>
+        <span class="dots">⋮</span>
+      </div>
+
+      <div id="chat"></div>
+
+      <div class="inputbar">
+        <div class="field empty" id="field"><span id="fieldtx"></span><span class="caret" id="caret"></span></div>
+        <div class="send">➤</div>
+      </div>
+
+      <div id="notif" class="hide"><span class="ic">🔔</span><span class="tx"><b id="notifT"></b><span id="notifS"></span></span></div>
+      <div id="meta" class="hide"><span id="metaT"></span></div>
+      <div id="battdlg" class="hide"><div class="big">🪫</div><b id="battT">Batería baja</b><span id="battS">Queda 15%</span></div>
+      <div id="card" class="hide"><b id="cardT"></b></div>
+      <div id="off" class="hide"></div>
+    </div>
+  </div>
+
+  <div id="meme" class="hide"><img id="memeImg" alt="" /><div class="ph" id="memePh">Pon tu imagen en <b>assets/meme.jpg</b><br />(o cárgala con el botón de abajo)</div></div>
+
+  <div id="slate" class="hide">
+    <div class="n" id="slateN">Caso 1</div>
+    <div class="bar"></div>
+    <div class="ti" id="slateT"></div>
+  </div>
+
+  <div id="guides" class="hide">
+    <div class="g" style="top:0"></div>
+    <div class="g" style="top:860px"></div>
+    <div class="lbl" style="top:864px">zona UI de Shorts ↓</div>
+  </div>
+</div>
+
+<div id="bar">
+  <button class="pri" id="bPlay">▶ Reproducir</button>
+  <button id="bStop">■ Parar</button>
+  <button id="bSafe">Zona segura: ON</button>
+  <button id="bGuides">Guías: OFF</button>
+  <label for="fMeme">🖼 Imagen manual</label><input type="file" id="fMeme" accept="image/*" />
+  <button id="bRec">⏺ Grabar pantalla (.webm)</button>
+  <span class="sp" id="info">—</span>
+  <input type="range" id="scrub" min="0" max="1000" value="0" />
+</div>
+
+<script>
+/* =====================================================================
+   CASOS ICFES · página autocontenida y determinista
+   ---------------------------------------------------------------------
+   La animación NO usa setTimeout/await sleep: se construye una línea de
+   tiempo declarativa a partir de CASES y todo el estado del DOM es una
+   función pura del instante t.  Exporta:
+       window.__duration()      -> duración total en ms
+       window.__seek(tMs)       -> pone el DOM en el estado exacto de tMs
+       window.__renderAudio()   -> renderiza el audio offline (WAV base64)
+       window.__ready           -> true cuando la imagen ya cargó
+   ===================================================================== */
+
+/* ------------------------- 1. DATOS: LOS CASOS ------------------------ */
+const CASES = [
+  {
+    titulo: "El resumen de última hora",
+    hora: "11:52",
+    beats: [
+      { t:"meta", text:"11:52 p.m. · un día antes del ICFES", dur:1700 },
+      { t:"user", text:"resúmeme TODO lectura crítica 😭" },
+      { t:"ai",   text:"Claro. Aquí tienes 14 páginas.", think:1300 },
+      { t:"user", text:"más corto" },
+      { t:"ai",   text:"Lee. Con calma. Es literal todo lo que hay.", think:1500 },
+      { t:"batt", pct:15, alerta:true, dur:1500 },
+      { t:"user", text:"más corto todavía" },
+      { t:"wait", dur:700 },
+      { t:"off",  dur:900 }
+    ]
+  },
+  {
+    titulo: "Modo avión",
+    hora: "07:14",
+    beats: [
+      { t:"meta", text:"7:14 a.m. · bloque 1, pregunta 14", dur:1600 },
+      { t:"user", text:"¿la 14? rápido porfa" },
+      { t:"aiCut", text:"La respuesta correcta es la", think:2600, card:"SIN SEÑAL" },
+      { t:"note", titulo:"Salón 203", texto:"Entregue el celular, por favor.", dur:2200 },
+      { t:"off",  dur:900 }
+    ]
+  },
+  {
+    titulo: "Confía, mano",
+    hora: "09:40",
+    beats: [
+      { t:"user", text:"¿seguro es la C?" },
+      { t:"ai",   text:"Segurísimo. Es la C. 100%.", think:1100 },
+      { t:"meta", text:"tres meses después", dur:1700 },
+      { t:"ai",   text:"Era la A. Perdón, alucine un poquito.", think:1700 },
+      { t:"note", titulo:"Resultados ICFES", texto:"Ya puedes consultar tu puntaje.", dur:2200 },
+      { t:"off",  dur:900 }
+    ]
+  }
+];
+
+/* --------------------------- 2. TIEMPOS BASE -------------------------- */
+const TIM = {
+  slate:      1500,   // cortinilla CASO n
+  slateGap:    180,   // negro después de la cortinilla
+  perChar:      46,   // ms por letra tecleada
+  minType:     420,
+  sendPause:   320,   // pausa entre terminar de escribir y enviar
+  thinkDef:   1400,
+  readBase:    780,   // pausa de lectura después de un mensaje de la IA
+  readPerCh:    26,
+  readMax:    2500,
+  msgIn:       220,   // animación de entrada de una burbuja
+  notifIn:     280,
+  notifOut:    280,
+  meme:       2200,   // imagen entre casos
+  memeFade:    220,
+  tailBlack:   420    // negro final
+};
+
+/* ------------------------ 3. LÍNEA DE TIEMPO -------------------------- */
+/* Cada evento: { t0, dur, kind, ...datos }.  Los eventos son ordenados y
+   el estado de un instante se obtiene reproduciéndolos en orden.        */
+
+function buildTimeline(cases){
+  const ev = [];
+  let t = 0;
+  const push = (kind, t0, dur, data) => { ev.push(Object.assign({kind, t0, dur:dur||0}, data||{})); };
+
+  cases.forEach((c, ci) => {
+    /* cortinilla */
+    push("case", t, 0, { ci, hora:c.hora });
+    push("slate", t, TIM.slate, { n:c.n != null ? c.n : ci+1, titulo:c.titulo });
+    push("slateHit", t, 0, {});
+    t += TIM.slate + TIM.slateGap;
+
+    /* beats */
+    c.beats.forEach(b => {
+      if (b.t === "user"){
+        const typeDur = Math.max(TIM.minType, b.text.length * TIM.perChar);
+        push("type", t, typeDur, { text:b.text });
+        t += typeDur + TIM.sendPause;
+        push("msg", t, 0, { who:"me", text:b.text });
+        push("whoosh", t, 0, {});
+        t += 420;
+      }
+      else if (b.t === "ai" || b.t === "aiCut"){
+        const think = b.think || TIM.thinkDef;
+        push("think", t, think, {});
+        t += think;
+        push("msg", t, 0, { who:"ai", text:b.text });
+        push("pop", t, 0, {});
+        if (b.t === "aiCut"){
+          t += 260;
+          const cd = b.cardDur || 1500;
+          push("card", t, cd, { text:b.card });
+          push("slateHit", t, 0, {});
+          t += cd;
+        } else {
+          t += Math.min(TIM.readMax, TIM.readBase + b.text.length * TIM.readPerCh);
+        }
+      }
+      else if (b.t === "note"){
+        const d = b.dur || 2200;
+        push("notif", t, d, { titulo:b.titulo, texto:b.texto });
+        push("ding", t + TIM.notifIn * .5, 0, {});
+        t += d + 200;
+      }
+      else if (b.t === "meta"){
+        const d = b.dur || 1600;
+        push("meta", t, d, { text:b.text });
+        t += d;
+      }
+      else if (b.t === "batt"){
+        const d = b.dur || 1400;
+        push("batt", t, 0, { pct:b.pct });
+        if (b.alerta){
+          push("battdlg", t, d, { pct:b.pct });
+          push("battAlert", t, 0, {});
+          t += d + 200;
+        }
+      }
+      else if (b.t === "wait"){
+        t += b.dur || 600;
+      }
+      else if (b.t === "off"){
+        const d = b.dur || 900;
+        push("off", t, d, {});
+        push("power", t, 0, {});
+        t += d;
+      }
+    });
+
+    /* imagen entre casos (no después del último) */
+    if (ci < cases.length - 1){
+      push("meme", t, TIM.meme, {});
+      t += TIM.meme;
+    }
+  });
+
+  t += TIM.tailBlack;
+  ev.sort((a,b) => a.t0 - b.t0);
+  return { events:ev, duration:t };
+}
+
+/* --------------------- 4. SELECCIÓN DE CASO (?caso=) ------------------ */
+const QS = new URLSearchParams(location.search);
+const CASO = parseInt(QS.get("caso") || "0", 10);
+const ACTIVE = (CASO >= 1 && CASO <= CASES.length)
+  ? [Object.assign({}, CASES[CASO-1], { n:CASO })]
+  : CASES.map((c,i) => Object.assign({}, c, { n:i+1 }));
+
+const TL = buildTimeline(ACTIVE);
+
+/* ------------------------------ 5. DOM -------------------------------- */
+const $ = id => document.getElementById(id);
+const D = {
+  canvas:$("canvas"), chat:$("chat"), field:$("field"), fieldtx:$("fieldtx"), caret:$("caret"),
+  notif:$("notif"), notifT:$("notifT"), notifS:$("notifS"),
+  meta:$("meta"), metaT:$("metaT"),
+  battdlg:$("battdlg"), battT:$("battT"), battS:$("battS"),
+  card:$("card"), cardT:$("cardT"), off:$("off"),
+  slate:$("slate"), slateN:$("slateN"), slateT:$("slateT"),
+  meme:$("meme"), memeImg:$("memeImg"), memePh:$("memePh"),
+  batt:$("batt"), battpct:$("battpct"), statusbar:$("statusbar"),
+  clock:$("clock"), sig:$("sig"), presence:$("presence"), guides:$("guides")
+};
+
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const ease  = p => 1 - Math.pow(1 - p, 3);
+
+/* --------------------- 6. ESTADO EN FUNCIÓN DE t ---------------------- */
+function stateAt(t){
+  const s = {
+    ci:0, hora:"11:52", msgs:[], input:null, inputT:0, thinking:false, thinkT:0,
+    notif:null, notifP:0, meta:null, metaP:0, batt:100, battdlg:null, battdlgP:0,
+    card:null, cardP:0, off:0, slate:null, slateP:0, meme:0, dead:false
+  };
+  for (let i = 0; i < TL.events.length; i++){
+    const e = TL.events[i];
+    if (e.t0 > t) break;
+    const l = t - e.t0;                 // tiempo local dentro del evento
+    switch (e.kind){
+      case "case":
+        s.ci = e.ci; s.hora = e.hora; s.msgs = []; s.batt = 100; s.dead = false; break;
+      case "slate":
+        if (l < e.dur){ s.slate = { n:e.n, titulo:e.titulo }; s.slateP = l / e.dur; }
+        break;
+      case "type": {
+        if (l < e.dur){
+          const n = Math.min(e.text.length, Math.floor(l / TIM.perChar));
+          s.input = e.text.slice(0, n); s.inputT = l;
+        } else { s.input = e.text; s.inputT = l; }
+        break;
+      }
+      case "msg":
+        s.msgs.push({ who:e.who, text:e.text, p:clamp(l / TIM.msgIn, 0, 1) });
+        s.input = null;
+        break;
+      case "think":
+        if (l < e.dur){ s.thinking = true; s.thinkT = l; }
+        break;
+      case "notif":
+        if (l < e.dur){
+          s.notif = { titulo:e.titulo, texto:e.texto };
+          s.notifP = l < TIM.notifIn ? ease(l / TIM.notifIn)
+                   : l > e.dur - TIM.notifOut ? 1 - ease((l - (e.dur - TIM.notifOut)) / TIM.notifOut)
+                   : 1;
+        }
+        break;
+      case "meta":
+        if (l < e.dur){ s.meta = e.text; s.metaP = clamp(l / 260, 0, 1) * clamp((e.dur - l) / 260, 0, 1); }
+        break;
+      case "batt":
+        s.batt = e.pct; break;
+      case "battdlg":
+        if (l < e.dur){ s.battdlg = e.pct; s.battdlgP = clamp(l / 200, 0, 1); }
+        break;
+      case "card":
+        if (l < e.dur){ s.card = e.text; s.cardP = clamp(l / 180, 0, 1); s.dead = true; }
+        else { s.dead = true; }
+        break;
+      case "off":
+        s.off = clamp(l / (e.dur * .55), 0, 1); break;
+      case "meme":
+        if (l < e.dur){
+          s.meme = l < TIM.memeFade ? l / TIM.memeFade
+                 : l > e.dur - TIM.memeFade ? (e.dur - l) / TIM.memeFade
+                 : 1;
+        }
+        break;
+    }
+  }
+  return s;
+}
+
+/* ------------------------- 7. PINTAR EL DOM --------------------------- */
+let lastSig = "";
+
+function applyState(s){
+  /* --- chat --- */
+  const sig = s.msgs.map(m => m.who + "|" + m.text).join("¬") + "¬think:" + (s.thinking ? 1 : 0);
+  if (sig !== lastSig){
+    lastSig = sig;
+    D.chat.innerHTML = "";
+    s.msgs.forEach(m => {
+      const row = document.createElement("div");
+      row.className = "row " + (m.who === "me" ? "me" : "ai");
+      const b = document.createElement("div");
+      b.className = "bub";
+      b.textContent = m.text;
+      row.appendChild(b);
+      D.chat.appendChild(row);
+    });
+    if (s.thinking){
+      const row = document.createElement("div");
+      row.className = "row ai";
+      row.id = "typingRow";
+      row.innerHTML = '<div class="bub"><span class="typing"><i></i><i></i><i></i></span></div>';
+      D.chat.appendChild(row);
+    }
+  }
+  /* animación de entrada de la última burbuja (siempre recalculada) */
+  const rows = D.chat.querySelectorAll(".row");
+  s.msgs.forEach((m, i) => {
+    const r = rows[i]; if (!r) return;
+    r.style.opacity = m.p.toFixed(3);
+    r.style.transform = "translateY(" + ((1 - ease(m.p)) * 12).toFixed(2) + "px)";
+  });
+  if (s.thinking){
+    const tr = document.getElementById("typingRow");
+    if (tr){
+      const dots = tr.querySelectorAll(".typing i");
+      const ph = Math.floor(s.thinkT / 260) % 3;
+      dots.forEach((d, i) => { d.style.opacity = (i === ph ? 1 : .32).toString(); });
+    }
+  }
+  D.chat.scrollTop = D.chat.scrollHeight;
+
+  /* --- barra de escritura --- */
+  if (s.input !== null){
+    D.fieldtx.textContent = s.input;
+    D.field.classList.toggle("empty", s.input.length === 0);
+    D.caret.style.opacity = (Math.floor(s.inputT / 480) % 2 === 0) ? "1" : "0";
+  } else {
+    D.fieldtx.textContent = "Escribe un mensaje";
+    D.field.classList.add("empty");
+    D.caret.style.opacity = "0";
+  }
+
+  /* --- barra de estado --- */
+  D.clock.textContent = s.hora;
+  D.battpct.textContent = s.batt + "%";
+  D.batt.querySelector("b").style.width = Math.max(2, (s.batt / 100) * 19).toFixed(1) + "px";
+  D.batt.classList.toggle("low", s.batt <= 20);
+  D.statusbar.classList.toggle("low", s.batt <= 20);
+  D.sig.classList.toggle("dead", s.dead);
+  D.presence.textContent = s.dead ? "sin conexión" : (s.thinking ? "escribiendo…" : "en línea");
+
+  /* --- overlays --- */
+  show(D.notif, !!s.notif, () => {
+    D.notifT.textContent = s.notif.titulo; D.notifS.textContent = s.notif.texto;
+    D.notif.style.opacity = s.notifP.toFixed(3);
+    D.notif.style.transform = "translateY(" + ((s.notifP - 1) * 84).toFixed(2) + "px)";
+  });
+  show(D.meta, !!s.meta, () => {
+    D.metaT.textContent = s.meta;
+    D.meta.style.opacity = s.metaP.toFixed(3);
+    D.meta.style.transform = "translateY(" + ((1 - s.metaP) * 8).toFixed(2) + "px)";
+  });
+  show(D.battdlg, s.battdlg !== null, () => {
+    D.battT.textContent = "Batería baja";
+    D.battS.textContent = "Queda " + s.battdlg + "%";
+    D.battdlg.style.opacity = s.battdlgP.toFixed(3);
+    const k = .92 + .08 * ease(s.battdlgP);
+    D.battdlg.style.transform = "translate(-50%,-50%) scale(" + k.toFixed(3) + ")";
+  });
+  show(D.card, !!s.card, () => {
+    D.cardT.textContent = s.card;
+    D.card.style.opacity = s.cardP.toFixed(3);
+    const k = 1.06 - .06 * ease(s.cardP);
+    D.cardT.style.transform = "scale(" + k.toFixed(3) + ")";
+  });
+  show(D.off, s.off > 0, () => {
+    /* barrido de apagado: la pantalla colapsa hacia una línea y se apaga */
+    const p = ease(s.off);
+    D.off.style.opacity = Math.min(1, s.off * 2.2).toFixed(3);
+    D.off.style.clipPath = "inset(" + (p * 0).toFixed(1) + "% 0 0 0)";
+  });
+  show(D.slate, !!s.slate, () => {
+    D.slateN.textContent = "Caso " + s.slate.n;
+    D.slateT.textContent = s.slate.titulo;
+    const p = s.slateP;
+    const inP = clamp(p / .16, 0, 1), outP = clamp((1 - p) / .12, 0, 1);
+    D.slate.style.opacity = Math.min(inP, outP).toFixed(3);
+    D.slateT.style.transform = "translateY(" + ((1 - ease(inP)) * 14).toFixed(2) + "px)";
+    D.slateN.style.letterSpacing = (7 + (1 - ease(inP)) * 10).toFixed(2) + "px";
+  });
+  show(D.meme, s.meme > 0, () => { D.meme.style.opacity = s.meme.toFixed(3); });
+}
+
+function show(el, on, paint){
+  if (on){ el.classList.remove("hide"); paint(); }
+  else if (!el.classList.contains("hide")) el.classList.add("hide");
+}
+
+/* ============================ 8. AUDIO ================================
+   Módulo compartido: recibe cualquier BaseAudioContext, así los mismos
+   efectos suenan en la vista previa (AudioContext) y en el render
+   determinista (OfflineAudioContext).                                   */
+
+function makeSFX(ctx, dest){
+  const out = ctx.createGain();
+  out.gain.value = .9;
+  out.connect(dest || ctx.destination);
+
+  function noiseBuf(sec){
+    const n = Math.max(1, Math.floor(ctx.sampleRate * sec));
+    const b = ctx.createBuffer(1, n, ctx.sampleRate);
+    const d = b.getChannelData(0);
+    let seed = 12345;
+    for (let i = 0; i < n; i++){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; d[i] = (seed / 0x3fffffff) - 1; }
+    return b;
+  }
+
+  function env(node, t, a, d, peak){
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+    node.connect(g); g.connect(out);
+    return g;
+  }
+
+  function tone(t, f, a, d, peak, type, f2){
+    const o = ctx.createOscillator();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
+    env(o, t, a, d, peak);
+    o.start(t); o.stop(t + a + d + .02);
+  }
+
+  function noise(t, sec, freq, q, peak, type){
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf(sec);
+    const f = ctx.createBiquadFilter();
+    f.type = type || "bandpass"; f.frequency.setValueAtTime(freq, t); f.Q.value = q || 1;
+    src.connect(f);
+    env(f, t, .004, sec, peak);
+    src.start(t); src.stop(t + sec + .02);
+  }
+
+  return {
+    key(t){ noise(t, .022, 2400, 2.2, .07, "bandpass"); tone(t, 900, .003, .022, .035, "square"); },
+    whoosh(t){ noise(t, .16, 1400, .8, .07, "bandpass"); },
+    pop(t){ tone(t, 420, .006, .09, .10, "sine", 700); },
+    ding(t){ tone(t, 880, .006, .18, .10); tone(t + .09, 1320, .006, .26, .085); },
+    battAlert(t){ tone(t, 660, .006, .13, .11, "triangle"); tone(t + .18, 520, .006, .2, .11, "triangle"); },
+    tick(t){ noise(t, .018, 3000, 3, .045, "bandpass"); },
+    slateHit(t){ tone(t, 150, .004, .34, .22, "sine", 48); noise(t, .09, 700, .7, .10, "lowpass"); },
+    power(t){ tone(t, 760, .01, .48, .13, "sawtooth", 58); noise(t, .5, 900, .5, .05, "lowpass"); }
+  };
+}
+
+/* Programa TODOS los efectos de la línea de tiempo sobre un contexto.
+   t0Sec = instante del contexto que corresponde a t=0 de la animación.  */
+function scheduleAudio(ctx, dest, t0Sec){
+  const sfx = makeSFX(ctx, dest);
+  const S = ms => t0Sec + ms / 1000;
+  TL.events.forEach(e => {
+    switch (e.kind){
+      case "type": {
+        const n = Math.min(e.text.length, Math.floor(e.dur / TIM.perChar));
+        for (let i = 0; i < n; i++){
+          if (e.text[i] === " ") continue;
+          sfx.key(S(e.t0 + i * TIM.perChar));
+        }
+        break;
+      }
+      case "whoosh":   sfx.whoosh(S(e.t0)); break;
+      case "pop":      sfx.pop(S(e.t0)); break;
+      case "ding":     sfx.ding(S(e.t0)); break;
+      case "battAlert":sfx.battAlert(S(e.t0)); break;
+      case "slateHit": sfx.slateHit(S(e.t0)); break;
+      case "power":    sfx.power(S(e.t0)); break;
+      case "think": {
+        /* reloj tic-tac mientras la IA "piensa" */
+        for (let m = 220; m < e.dur - 80; m += 480) sfx.tick(S(e.t0 + m));
+        break;
+      }
+    }
+  });
+}
+
+/* --------------- 9. RENDER OFFLINE DEL AUDIO (para Node) -------------- */
+function encodeWav(buf){
+  const ch = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
+  const bytes = 44 + len * ch * 2;
+  const ab = new ArrayBuffer(bytes), v = new DataView(ab);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, "RIFF"); v.setUint32(4, bytes - 8, true); ws(8, "WAVE");
+  ws(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
+  ws(36, "data"); v.setUint32(40, len * ch * 2, true);
+  const chans = [];
+  for (let c = 0; c < ch; c++) chans.push(buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < len; i++){
+    for (let c = 0; c < ch; c++){
+      let x = chans[c][i];
+      x = x < -1 ? -1 : x > 1 ? 1 : x;
+      v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7fff, true); o += 2;
+    }
+  }
+  return new Uint8Array(ab);
+}
+
+function b64(u8){
+  let s = "";
+  const CH = 0x8000;
+  for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+  return btoa(s);
+}
+
+window.__renderAudio = async function(sampleRate){
+  const sr = sampleRate || 48000;
+  const secs = TL.duration / 1000;
+  const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const ctx = new OC(2, Math.ceil(secs * sr), sr);
+  scheduleAudio(ctx, ctx.destination, 0);
+  const buf = await ctx.startRendering();
+  window.__wav = b64(encodeWav(buf));
+  return window.__wav.length;
+};
+window.__wavSlice = (a, b) => window.__wav.slice(a, b);
+
+/* ------------------------ 10. API DE EXPORTACIÓN ---------------------- */
+window.__duration = () => TL.duration;
+window.__seek = t => { applyState(stateAt(clamp(t, 0, TL.duration))); };
+window.__timeline = () => ({ duration:TL.duration, events:TL.events });
+
+/* ------------------------ 11. IMAGEN ENTRE CASOS ---------------------- */
+window.__ready = false;
+(function loadMeme(){
+  const src = QS.get("meme") || "assets/meme.jpg";
+  const img = new Image();
+  img.onload  = () => { D.memeImg.src = img.src; D.memePh.classList.add("hide"); window.__ready = true; };
+  img.onerror = () => { D.memeImg.style.display = "none"; window.__ready = true; };
+  img.src = src;
+})();
+
+/* --------------------- 12. VISTA PREVIA EN NAVEGADOR ------------------ */
+let raf = null, actx = null, playT0 = 0;
+
+function stopPlay(){
+  if (raf) cancelAnimationFrame(raf), raf = null;
+  if (actx){ actx.close(); actx = null; }
+}
+
+$("bPlay").onclick = () => {
+  stopPlay();
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  scheduleAudio(actx, actx.destination, actx.currentTime + .08);
+  playT0 = performance.now();
+  const loop = () => {
+    const t = performance.now() - playT0;
+    window.__seek(t);
+    $("scrub").value = Math.round((t / TL.duration) * 1000);
+    $("info").textContent = (t / 1000).toFixed(1) + "s / " + (TL.duration / 1000).toFixed(1) + "s";
+    if (t < TL.duration) raf = requestAnimationFrame(loop); else stopPlay();
+  };
+  loop();
+};
+$("bStop").onclick = () => { stopPlay(); window.__seek(0); };
+$("scrub").oninput = e => { stopPlay(); window.__seek((e.target.value / 1000) * TL.duration); };
+
+$("bSafe").onclick = e => {
+  D.canvas.classList.toggle("safe");
+  e.target.textContent = "Zona segura: " + (D.canvas.classList.contains("safe") ? "ON" : "OFF");
+};
+$("bGuides").onclick = e => {
+  D.guides.classList.toggle("hide");
+  e.target.textContent = "Guías: " + (D.guides.classList.contains("hide") ? "OFF" : "ON");
+};
+$("fMeme").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  D.memeImg.style.display = "block";
+  D.memeImg.src = URL.createObjectURL(f);
+  D.memePh.classList.add("hide");
+};
+
+/* Grabador manual heredado (queda como respaldo; el pipeline de Node
+   produce un mp4 mucho más limpio con `npm run render`).               */
+let rec = null;
+$("bRec").onclick = async () => {
+  if (rec){ rec.stop(); rec = null; $("bRec").textContent = "⏺ Grabar pantalla (.webm)"; return; }
+  try{
+    const st = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:30 }, audio:true });
+    const chunks = [];
+    rec = new MediaRecorder(st, { mimeType:"video/webm;codecs=vp9,opus", videoBitsPerSecond: 8e6 });
+    rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data);
+    rec.onstop = () => {
+      st.getTracks().forEach(tr => tr.stop());
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(chunks, { type:"video/webm" }));
+      a.download = "casos_icfes.webm"; a.click();
+    };
+    rec.start();
+    $("bRec").textContent = "⏹ Detener grabación";
+    $("bPlay").click();
+  }catch(err){ alert("No se pudo iniciar la grabación: " + err.message); }
+};
+
+/* Modo exportación: sin controles ni guías (lo activa Playwright) */
+if (QS.get("det") === "1"){
+  $("bar").style.display = "none";
+  D.guides.classList.add("hide");
+  document.body.style.display = "block";
+  document.documentElement.style.background = "#000";
+}
+
+/* estado inicial */
+window.__seek(0);
+$("info").textContent = "0.0s / " + (TL.duration / 1000).toFixed(1) + "s";
+</script>
+</body>
+</html>
