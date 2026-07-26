@@ -135,12 +135,17 @@
   #notif .tx b{font-size:13px}
   #notif .tx span{font-size:12.5px;color:#a9c4ce}
 
+  /* leyenda de tiempo: cubre el área del chat (no las burbujas sueltas), así
+     nunca se monta encima de un mensaje y se lee como salto temporal */
   #meta{
-    position:absolute;left:0;right:0;bottom:86px;z-index:7;text-align:center;padding:0 22px;
+    position:absolute;left:0;right:0;top:98px;bottom:64px;z-index:7;
+    display:flex;align-items:center;justify-content:center;padding:0 26px;
+    background:rgba(5,9,12,.84);
   }
   #meta span{
-    display:inline-block;background:rgba(6,10,13,.82);border:1px solid #27414c;
-    padding:7px 15px;border-radius:999px;font-size:13.5px;color:#cfe6ee;letter-spacing:.2px;
+    display:inline-block;background:rgba(16,28,34,.95);border:1px solid #2d4b58;
+    padding:9px 18px;border-radius:999px;font-size:14.5px;color:#dcecf3;letter-spacing:.2px;
+    text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5);
   }
 
   #battdlg{
@@ -341,7 +346,7 @@ const TIM = {
   notifOut:    280,
   meme:       2200,   // imagen entre casos
   memeFade:    220,
-  tailBlack:   420    // negro final
+  tailBlack:   200    // negro final (corto: el short se repite en bucle)
 };
 
 /* ------------------------ 3. LÍNEA DE TIEMPO -------------------------- */
@@ -468,7 +473,12 @@ function stateAt(t){
     const l = t - e.t0;                 // tiempo local dentro del evento
     switch (e.kind){
       case "case":
-        s.ci = e.ci; s.hora = e.hora; s.msgs = []; s.batt = 100; s.dead = false; break;
+        /* arranca un caso nuevo: el celular vuelve a estar encendido.
+           Sin reiniciar `off`, el apagado del caso anterior tapaba con negro
+           todo lo que viniera después. */
+        s.ci = e.ci; s.hora = e.hora; s.msgs = [];
+        s.batt = 100; s.dead = false; s.off = 0;
+        break;
       case "slate":
         if (l < e.dur){ s.slate = { n:e.n, titulo:e.titulo }; s.slateP = l / e.dur; }
         break;
@@ -592,7 +602,9 @@ function applyState(s){
   show(D.meta, !!s.meta, () => {
     D.metaT.textContent = s.meta;
     D.meta.style.opacity = s.metaP.toFixed(3);
-    D.meta.style.transform = "translateY(" + ((1 - s.metaP) * 8).toFixed(2) + "px)";
+    /* el desplazamiento va en la píldora, no en el velo, para que el fondo
+       no se despegue del borde del chat */
+    D.metaT.style.transform = "translateY(" + ((1 - s.metaP) * 8).toFixed(2) + "px)";
   });
   show(D.battdlg, s.battdlg !== null, () => {
     D.battT.textContent = "Batería baja";
