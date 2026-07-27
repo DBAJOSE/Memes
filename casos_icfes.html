@@ -1,889 +1,698 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Casos ICFES · Shorts</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casos IA en el ICFES — pantallas para el video</title>
 <style>
   :root{
-    --bg:#07080c; --frame:#15171d; --frame2:#0c0e13;
-    /* paleta de ChatGPT en modo oscuro */
-    --screen:#212121; --bar:#212121; --hdr:#212121;
-    --me:#303030; --pill:#303030; --txt:#ececec; --muted:#9b9b9b; --faint:#7d7d7d;
-    /* acentos: solo para las cortinillas y tarjetas del vídeo, no para la app */
-    --accent:#22d3a6; --accent2:#37c2ff; --gold:#ffcf3f; --bad:#ff5a5a;
+    --bg:#212121; --bubble:#303030; --txt:#ececec; --txt-dim:#9a9a9a;
+    --line:#3a3a3a; --green:#19c37d; --red:#f04438; --wa:#25d366;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:#000;height:100%}
-  body{
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    color:var(--txt);display:flex;flex-direction:column;align-items:center;
-    -webkit-font-smoothing:antialiased;
-  }
+  html,body{height:100%;background:#000;overflow:hidden;
+    font-family:Roboto,"Helvetica Neue",Arial,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 
-  /* ============ LIENZO 9:16 ============ */
-  #canvas{
-    position:relative;width:540px;height:960px;flex:0 0 auto;
-    background:
-      radial-gradient(700px 420px at 50% -8%, #16283a 0%, transparent 62%),
-      radial-gradient(600px 400px at 50% 108%, #10262a 0%, transparent 60%),
-      var(--bg);
-    overflow:hidden;transform-origin:top left;
-  }
+  #wrap{position:fixed;inset:0;display:grid;place-items:center}
+  #canvas{position:relative;width:540px;height:960px;background:#000;overflow:hidden;
+    transform-origin:center center}
 
-  /* ============ CELULAR ============ */
-  #phone{
-    position:absolute;left:50%;top:50%;width:464px;height:960px;
-    transform:translate(-50%,-50%);
-    border:10px solid var(--frame);border-radius:46px;
-    background:var(--frame2);
-    box-shadow:0 0 0 2px #24272f, 0 26px 60px rgba(0,0,0,.65), inset 0 0 0 1px #2b2f38;
-  }
-  #canvas.safe #phone{transform:translate(-50%,-50%) scale(.855) translateY(-44px)}
-  #phone .cam{
-    position:absolute;left:50%;top:11px;width:11px;height:11px;margin-left:-5.5px;
-    border-radius:50%;background:#05070a;
-    box-shadow:inset 0 0 0 2px #1e222a, 0 0 6px rgba(0,0,0,.9);z-index:6;
-  }
-  #phone .cam::after{content:"";position:absolute;left:2.5px;top:2px;width:3px;height:3px;border-radius:50%;background:#0f3b4a}
-  .sidebtn{position:absolute;background:#1b1e25;border-radius:3px;box-shadow:inset 0 1px 0 #2b3038}
-  .sb-vol-up{right:-13px;top:190px;width:4px;height:64px}
-  .sb-vol-dn{right:-13px;top:266px;width:4px;height:64px}
-  .sb-power{left:-13px;top:222px;width:4px;height:96px}
+  /* ── celular ─────────────────────────────────────────── */
+  #phone{position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%) scale(.945);transform-origin:center center;
+    width:492px;height:988px;padding:14px;border-radius:52px;
+    background:linear-gradient(150deg,#3a3d42 0%,#15171a 34%,#101215 62%,#41454b 100%);
+    box-shadow:0 0 0 1.5px #0a0b0d, 0 26px 60px rgba(0,0,0,.65)}
+  #canvas.safe #phone{top:4%;transform:translate(-50%,0) scale(.715);transform-origin:top center}
+  #phone::after{content:"";position:absolute;inset:6px;border-radius:47px;
+    border:1px solid rgba(255,255,255,.09);pointer-events:none}
+  .side{position:absolute;right:-3px;width:3px;border-radius:0 3px 3px 0;
+    background:linear-gradient(90deg,#22252a,#4a4f56)}
+  .vol-up{top:210px;height:66px} .vol-dn{top:290px;height:66px} .power{top:400px;height:96px}
+  .cam{position:absolute;top:24px;left:50%;transform:translateX(-50%);
+    width:13px;height:13px;border-radius:50%;background:#05060a;
+    box-shadow:inset 0 0 0 1.5px #1d2026;z-index:6}
 
-  /* ============ PANTALLA ============ */
-  /* pantalla: 464x960 exactos, dentro del marco */
-  #stage{
-    position:absolute;left:0;top:0;width:464px;height:960px;
-    border-radius:38px;overflow:hidden;background:var(--screen);
-    display:flex;flex-direction:column;
-  }
+  #stage{width:464px;height:960px;background:var(--bg);color:var(--txt);
+    position:relative;overflow:hidden;border-radius:38px}
 
-  .statusbar{
-    flex:0 0 auto;height:38px;display:flex;align-items:center;justify-content:space-between;
-    padding:0 20px;font-size:13px;font-weight:600;color:var(--txt);background:transparent;
-  }
-  .statusbar .right{display:flex;align-items:center;gap:7px}
-  .sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}
-  .sig i{display:block;width:2.5px;background:var(--txt);border-radius:1px}
-  .sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}
-  .sig i:nth-child(3){height:8px}.sig i:nth-child(4){height:11px}
-  .sig.dead i{background:#5a5a5a}
-  .battwrap{display:inline-flex;align-items:center;gap:3px;font-size:12px}
-  .batt{position:relative;width:24px;height:12px;border:1.5px solid var(--txt);border-radius:3px}
-  .batt::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:6px;background:var(--txt);border-radius:0 1px 1px 0}
-  .batt b{position:absolute;left:1.5px;top:1.5px;bottom:1.5px;display:block;border-radius:1px;background:var(--txt)}
-  .batt.low b{background:var(--bad)}
-  .batt.low{border-color:var(--bad)}
-  .statusbar.low .battwrap{color:var(--bad)}
+  /* ── barra de estado ─────────────────────────────────── */
+  .status{height:34px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;font-size:14px;letter-spacing:.2px}
+  .status .right{display:flex;align-items:center;gap:7px}
+  .batt{display:flex;align-items:center;gap:4px;color:var(--red);font-size:12px;font-weight:500}
+  .batt .shell{width:22px;height:11px;border:1.5px solid var(--red);border-radius:3px;
+    position:relative;display:inline-block}
+  .batt .shell::after{content:"";position:absolute;right:-4px;top:3px;width:2px;height:5px;
+    background:var(--red);border-radius:0 1px 1px 0}
+  .batt .fill{position:absolute;left:1px;top:1px;bottom:1px;width:3px;background:var(--red);border-radius:1px}
 
-  /* cabecera de ChatGPT: menú · "ChatGPT ⌄" centrado · chat nuevo */
-  .apphdr{
-    flex:0 0 auto;height:54px;display:flex;align-items:center;padding:0 14px;
-    background:var(--hdr);
-  }
-  .apphdr .icn{width:34px;height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
-  .apphdr .icn svg{width:23px;height:23px;fill:none;stroke:var(--txt);stroke-width:1.9;
-                   stroke-linecap:round;stroke-linejoin:round}
-  .apphdr .title{
-    flex:1 1 auto;text-align:center;font-size:17px;font-weight:600;color:var(--txt);
-    letter-spacing:-.2px;display:flex;align-items:center;justify-content:center;gap:5px;
-  }
-  .apphdr .title i{font-style:normal;font-size:12px;color:var(--muted);transform:translateY(1px)}
+  /* ── encabezado ──────────────────────────────────────── */
+  .head{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px}
+  .head .back{font-size:22px;line-height:1}
+  .head .ava{width:30px;height:30px;border-radius:50%;background:#5b6b8c;color:#fff;
+    display:none;place-items:center;font-size:13px;font-weight:700}
+  .head.wa .ava{display:grid}
+  .head .title{font-size:17px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .head .title span{font-size:11px;color:var(--txt-dim)}
 
-  /* los mensajes se apoyan abajo */
-  #chat{
-    flex:1 1 auto;overflow:hidden;padding:14px 16px 10px;
-    display:flex;flex-direction:column;justify-content:flex-end;gap:18px;
-  }
-  .row{display:flex;width:100%}
-  .row.me{justify-content:flex-end}
-  .bub{font-size:16px;line-height:1.5;word-wrap:break-word;position:relative;color:var(--txt)}
-  /* usuario: globo gris redondeado, alineado a la derecha */
-  .row.me .bub{max-width:78%;padding:11px 16px;border-radius:21px;background:var(--me)}
-  /* asistente: SIN globo, texto plano a todo el ancho (como la app real) */
-  .row.ai .bub{max-width:100%;padding:0;background:none;line-height:1.58}
-  /* "pensando": el punto que late, no los tres puntitos de WhatsApp */
-  .typing{display:inline-flex;align-items:center;padding:2px 0}
-  .typing i{width:15px;height:15px;border-radius:50%;background:var(--txt);display:block}
+  /* ── mensajes ────────────────────────────────────────── */
+  .feed{position:absolute;top:86px;bottom:96px;left:0;right:0;
+    padding:18px 16px 8px;display:flex;flex-direction:column;gap:18px;
+    overflow:hidden;justify-content:flex-end}
+  .row{display:flex;flex-direction:column}
+  .row.me{align-items:flex-end}
+  .me .bubble{background:var(--bubble);border-radius:22px;padding:12px 16px;
+    max-width:84%;font-size:17px;line-height:1.45;word-wrap:break-word}
+  .meta{font-size:12px;color:var(--txt-dim);margin-top:5px;padding-right:6px}
+  .meta b{color:#4fc3f7;font-weight:700}
+  .ai{display:flex;gap:12px;align-items:flex-start}
+  .ai .mark{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--txt);
+    flex:0 0 26px;display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:2px}
+  .ai.wa .mark{border:0;background:var(--wa);color:#0b2a16}
+  .ai .body{font-size:17px;line-height:1.5;max-width:88%}
+  .lead{font-size:17px;line-height:1.5}
 
-  /* barra de entrada: una sola píldora con + a la izquierda y la acción a la derecha */
-  .inputbar{
-    flex:0 0 auto;min-height:64px;padding:8px 12px 16px;display:flex;align-items:flex-end;
-    background:var(--bar);
-  }
-  .pill{
-    flex:1 1 auto;min-height:48px;border-radius:26px;background:var(--pill);
-    padding:6px 6px 6px 8px;display:flex;align-items:center;gap:6px;
-  }
-  .plus{
-    width:34px;height:34px;flex:0 0 auto;border-radius:50%;display:flex;align-items:center;
-    justify-content:center;color:var(--txt);font-size:23px;font-weight:300;line-height:1;
-  }
-  .field{
-    flex:1 1 auto;padding:2px 2px;font-size:16px;color:var(--txt);display:flex;align-items:center;
-    min-width:0;overflow:hidden;white-space:nowrap;
-  }
-  .field.empty{color:var(--faint)}
-  .caret{display:inline-block;width:2px;height:19px;background:var(--txt);margin-left:1px;vertical-align:-3px}
-  /* micrófono cuando no hay texto; flecha blanca cuando sí lo hay */
-  .act{width:36px;height:36px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
-  .act svg{width:20px;height:20px;fill:none;stroke:var(--txt);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-  .act.send{background:var(--txt);border-radius:50%}
-  .act.send svg{stroke:#0d0d0d;stroke-width:2.4;width:19px;height:19px}
+  .dots{display:flex;gap:5px;align-items:center;height:22px;margin-top:4px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:var(--txt);display:block;animation:blink 1.2s infinite}
+  .dots i:nth-child(2){animation-delay:.2s} .dots i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
 
-  /* ============ OVERLAYS DENTRO DE LA PANTALLA ============ */
-  #notif{
-    /* baja por debajo de la barra de estado (38px), como un aviso real */
-    position:absolute;left:12px;right:12px;top:44px;z-index:8;
-    background:rgba(52,52,52,.98);border:1px solid #4a4a4a;border-radius:18px;
-    padding:11px 14px;display:flex;align-items:center;gap:11px;
-    box-shadow:0 12px 30px rgba(0,0,0,.55);
-  }
-  #notif .ic{width:30px;height:30px;border-radius:9px;background:#4a4a4a;display:flex;align-items:center;justify-content:center;font-size:15px}
-  #notif .tx{display:flex;flex-direction:column;line-height:1.3}
-  #notif .tx b{font-size:13px}
-  #notif .tx span{font-size:12.5px;color:#b4b4b4}
+  .upsell{border:1px solid var(--line);border-radius:16px;padding:16px;background:#262626;margin-top:14px}
+  .upsell h4{font-size:16px;font-weight:600;margin-bottom:6px}
+  .upsell p{font-size:14px;color:var(--txt-dim);line-height:1.45;margin-bottom:14px}
+  .upsell button{width:100%;border:0;border-radius:999px;padding:11px 0;
+    background:var(--txt);color:#111;font-size:15px;font-weight:600;font-family:inherit}
 
-  /* leyenda de tiempo: cubre el área del chat (no las burbujas sueltas), así
-     nunca se monta encima de un mensaje y se lee como salto temporal */
-  #meta{
-    /* 92px = barra de estado (38) + cabecera (54); 72px = barra de entrada */
-    position:absolute;left:0;right:0;top:92px;bottom:72px;z-index:7;
-    display:flex;align-items:center;justify-content:center;padding:0 26px;
-    background:rgba(20,20,20,.86);
-  }
-  #meta span{
-    display:inline-block;background:#303030;border:1px solid #4a4a4a;
-    padding:9px 18px;border-radius:999px;font-size:14.5px;color:var(--txt);letter-spacing:.2px;
-    text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5);
-  }
+  /* ── barra de escritura ──────────────────────────────── */
+  .composer{position:absolute;left:0;right:0;bottom:0;padding:12px 14px 22px;background:var(--bg)}
+  .field{display:flex;align-items:flex-end;gap:10px;background:#303030;border-radius:26px;
+    padding:11px 14px;min-height:48px}
+  .field .plus{color:var(--txt-dim);font-size:22px;line-height:1;padding-bottom:1px}
+  .field .text{flex:1;font-size:16px;line-height:1.4;max-height:170px;overflow:hidden;
+    white-space:pre-wrap;word-wrap:break-word}
+  .field .text.empty::after{content:"Pregunta lo que quieras";color:var(--txt-dim)}
+  .caret{display:inline-block;width:2px;height:17px;background:var(--green);
+    vertical-align:-3px;margin-left:1px;animation:caret .9s step-end infinite}
+  @keyframes caret{50%{opacity:0}}
+  .field .send{width:32px;height:32px;border-radius:50%;background:var(--txt);color:#111;
+    display:grid;place-items:center;font-size:16px;font-weight:700;opacity:.35;transition:opacity .18s}
+  .field .send.on{opacity:1}
+  .pop{animation:pop .22s ease-out}
+  @keyframes pop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
 
-  #battdlg{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;width:270px;
-    background:#2f2f2f;border:1px solid #474747;border-radius:20px;padding:20px 18px;text-align:center;
-    box-shadow:0 20px 50px rgba(0,0,0,.7);
-  }
-  #battdlg .big{font-size:34px;margin-bottom:6px}
-  #battdlg b{display:block;font-size:16px;margin-bottom:4px}
-  #battdlg span{font-size:13px;color:#b4b4b4}
+  /* ── diálogo de batería ──────────────────────────────── */
+  #toast{position:absolute;inset:0;z-index:5;display:grid;place-items:center;
+    background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .28s;border-radius:38px}
+  #toast.on{opacity:1}
+  #toast .dlg{width:80%;background:#2e3033;border-radius:28px;padding:26px 22px 14px;text-align:center;
+    box-shadow:0 16px 44px rgba(0,0,0,.6);transform:scale(.9);
+    transition:transform .3s cubic-bezier(.2,.9,.3,1.25)}
+  #toast.on .dlg{transform:scale(1)}
+  #toast .bico{width:46px;height:46px;border-radius:50%;background:var(--red);color:#fff;
+    margin:0 auto 16px;display:grid;place-items:center;font-size:24px;font-weight:700}
+  #toast .t1{font-size:19px;font-weight:600;margin-bottom:8px}
+  #toast .t2{font-size:15px;color:var(--txt-dim);line-height:1.45}
+  #toast .acts{display:flex;justify-content:flex-end;gap:6px;margin-top:20px}
+  #toast .acts span{font-size:15px;font-weight:600;color:#8ab4f8;padding:9px 12px;
+    border-radius:999px;transition:background .12s;position:relative;overflow:hidden}
+  #toast .acts span.tap{background:rgba(138,180,248,.30)}
+  .rip{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;
+    border-radius:50%;background:#8ab4f8;opacity:0;transform:scale(0);pointer-events:none}
+  #cancel.tap .rip{animation:rip .52s ease-out forwards}
+  @keyframes rip{0%{transform:scale(0);opacity:.55}60%{opacity:.32}100%{transform:scale(1);opacity:0}}
 
-  #card{
-    position:absolute;inset:0;z-index:10;background:rgba(4,7,9,.93);
-    display:flex;align-items:center;justify-content:center;padding:34px;
-  }
-  #card b{
-    font-size:44px;font-weight:900;text-align:center;line-height:1.1;letter-spacing:-.5px;
-    background:linear-gradient(90deg,var(--accent),var(--accent2) 55%,var(--gold));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  #off{position:absolute;inset:0;z-index:12;background:#000}
+  /* ── notificaciones ─────────────────────────────────── */
+  #notes{position:absolute;top:10px;left:10px;right:10px;z-index:7;
+    display:flex;flex-direction:column;gap:9px}
+  .note{background:#2b2b2b;border-radius:20px;padding:13px 16px;display:flex;gap:12px;
+    align-items:flex-start;box-shadow:0 10px 30px rgba(0,0,0,.7);
+    transform:translateY(-180%);opacity:0;
+    transition:transform .42s cubic-bezier(.2,.9,.28,1.3),opacity .2s}
+  .note.on{transform:none;opacity:1}
+  .note .wico{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:grid;place-items:center;
+    font-size:15px;font-weight:700;color:#0b2a16;background:var(--wa)}
+  .note.of .wico{background:#1a73e8;color:#fff}
+  .note .who{font-size:12px;color:var(--txt-dim);margin-bottom:3px}
+  .note .msg{font-size:17px;font-weight:700;line-height:1.28}
+  .note.of .msg{font-size:15px}
 
-  /* ============ CORTINILLA (fuera del celular) ============ */
-  #slate{
-    position:absolute;inset:0;z-index:20;background:#04060a;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;
-  }
-  #slate .n{
-    font-size:15px;letter-spacing:7px;text-transform:uppercase;font-weight:800;color:var(--accent);
-  }
-  #slate .ti{
-    font-size:40px;font-weight:900;text-align:center;line-height:1.12;letter-spacing:-.6px;
-    background:linear-gradient(90deg,var(--accent),var(--accent2) 55%,var(--gold));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  #slate .bar{height:3px;width:70px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--gold))}
+  /* ── apagado ─────────────────────────────────────────── */
+  #off{position:absolute;inset:0;background:#000;z-index:9;opacity:0;pointer-events:none;
+    display:grid;place-items:center;transition:opacity 1.1s ease-in;border-radius:38px}
+  #off.on{opacity:1}
+  #off .inner{text-align:center;transition:opacity .8s ease-in .9s}
+  #off.gone .inner{opacity:0}
+  #off .spin{width:34px;height:34px;border-radius:50%;margin:0 auto 16px;
+    border:3px solid #333;border-top-color:#ddd;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #off .lbl{font-size:15px;color:#bbb}
 
-  /* ============ IMAGEN ENTRE CASOS ============ */
-  #meme{position:absolute;inset:0;z-index:19;background:#000;display:flex;align-items:center;justify-content:center}
-  #meme img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
-  #meme .ph{color:#3d4c57;font-size:14px;text-align:center;padding:30px;line-height:1.6}
+  /* ── cortinilla CASO N ──────────────────────────────── */
+  #slate{position:absolute;inset:0;z-index:30;background:#000;display:none;
+    flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 44px}
+  #slate.on{display:flex}
+  #slate .kicker{font-size:14px;letter-spacing:5px;color:#7a7a7a;text-transform:uppercase;margin-bottom:18px}
+  #slate .num{font-size:104px;font-weight:900;line-height:.9;color:#fff;letter-spacing:-3px}
+  #slate .ttl{font-size:26px;font-weight:700;color:#fff;margin-top:20px;line-height:1.25}
+  #slate .rule{width:64px;height:4px;background:var(--red);margin:22px auto 0;border-radius:2px}
+  #slate.fade{animation:sfade .5s ease-out}
+  @keyframes sfade{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
 
-  .hide{display:none !important}
+  /* ── foto entre casos ───────────────────────────────── */
+  #photo{position:absolute;inset:0;z-index:29;background:#000;display:none;
+    align-items:center;justify-content:center}
+  #photo.on{display:flex}
+  #photo img{max-width:100%;max-height:100%;object-fit:contain}
 
-  /* ============ GUÍAS Y CONTROLES (no salen en el render) ============ */
-  #guides{position:absolute;inset:0;z-index:30;pointer-events:none}
-  #guides .g{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,90,90,.5)}
-  #guides .lbl{position:absolute;right:6px;font-size:10px;color:rgba(255,120,120,.8);background:rgba(0,0,0,.5);padding:1px 5px;border-radius:4px}
-  #bar{
-    display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;
-    padding:12px;background:#0b0e14;width:100%;max-width:760px;
-  }
-  #bar button,#bar label{
-    border:1px solid #2b3a52;background:#131c2d;color:#dbe6f5;padding:8px 13px;border-radius:999px;
-    font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;
-  }
-  #bar button:hover{background:#1b2740;border-color:var(--accent)}
-  #bar button.pri{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#04121a;border:none}
-  #bar .sp{color:#63748f;font-size:11.5px;margin-left:4px}
-  #bar input[type=file]{display:none}
-  #scrub{width:100%;max-width:520px;accent-color:#22d3a6}
+  /* ── guías de zona insegura ─────────────────────────── */
+  #guides{position:absolute;inset:0;z-index:40;pointer-events:none;display:none}
+  #guides.on{display:block}
+  #guides .band{position:absolute;background:rgba(255,45,45,.16);border:1px dashed rgba(255,80,80,.6)}
+  #guides .band.bottom{left:0;right:0;bottom:0;height:21%}
+  #guides .band.top{left:0;right:0;top:0;height:8%}
+  #guides .band.right{top:8%;bottom:21%;right:0;width:12%}
+  #guides .lbl{position:absolute;bottom:21%;left:8px;transform:translateY(-6px);
+    font-size:11px;color:#ff8b8b;letter-spacing:.4px;text-transform:uppercase}
+
+  /* ── controles ──────────────────────────────────────── */
+  #ui{position:fixed;left:0;right:0;bottom:0;padding:9px 12px;background:#0d0d0d;color:#ddd;
+    font-size:12px;display:flex;column-gap:7px;row-gap:7px;align-items:center;flex-wrap:wrap;
+    justify-content:center;border-top:1px solid #222;z-index:50;max-height:45vh;overflow-y:auto}
+  #ui b{color:#fff}
+  #ui button,#ui label{background:#242424;color:#eee;border:1px solid #383838;border-radius:8px;
+    padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap}
+  #ui button:hover,#ui label:hover{background:#2f2f2f}
+  #ui button.sel{background:#eee;color:#111;border-color:#eee}
+  #ui button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  #ui .sep{width:1px;height:20px;background:#2a2a2a}
+  #ui input[type=file]{display:none}
+  .hide{display:none!important}
+  @media (prefers-reduced-motion:reduce){.pop{animation:none}}
 </style>
-</head>
-<body>
 
-<div id="canvas" class="safe">
+<div id="wrap"><div id="canvas" class="safe">
   <div id="phone">
-    <div class="cam"></div>
-    <div class="sidebtn sb-vol-up"></div>
-    <div class="sidebtn sb-vol-dn"></div>
-    <div class="sidebtn sb-power"></div>
-
+    <div class="side vol-up"></div><div class="side vol-dn"></div><div class="side power"></div>
     <div id="stage">
-      <div class="statusbar" id="statusbar">
-        <div class="left" id="clock">11:52</div>
+      <div class="status">
+        <div>4:30 PM</div>
         <div class="right">
-          <span class="sig" id="sig"><i></i><i></i><i></i><i></i></span>
-          <span class="battwrap"><span class="batt" id="batt"><b></b></span><span id="battpct">100%</span></span>
+          <span>✕ 4G</span><span>▲</span>
+          <span class="batt"><span class="shell"><span class="fill"></span></span><span id="pct">3%</span></span>
         </div>
       </div>
 
-      <div class="apphdr">
-        <span class="icn"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>
-        <span class="title">ChatGPT <i>⌄</i></span>
-        <span class="icn"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg></span>
+      <div class="head" id="head">
+        <div class="back">‹</div>
+        <div class="ava" id="ava">PY</div>
+        <div class="title" id="htitle">ChatGPT <span id="hsub">4o ▾</span></div>
       </div>
 
-      <div id="chat"></div>
+      <div class="feed" id="feed"></div>
 
-      <div class="inputbar">
-        <div class="pill">
-          <span class="plus">+</span>
-          <div class="field empty" id="field"><span id="fieldtx"></span><span class="caret" id="caret"></span></div>
-          <span class="act" id="act">
-            <svg id="icMic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-            <svg id="icSend" class="hide" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
-          </span>
+      <div class="composer">
+        <div class="field">
+          <div class="plus">+</div>
+          <div class="text empty" id="input"></div>
+          <div class="send" id="send">↑</div>
         </div>
       </div>
 
-      <div id="notif" class="hide"><span class="ic">🔔</span><span class="tx"><b id="notifT"></b><span id="notifS"></span></span></div>
-      <div id="meta" class="hide"><span id="metaT"></span></div>
-      <div id="battdlg" class="hide"><div class="big">🪫</div><b id="battT">Batería baja</b><span id="battS">Queda 15%</span></div>
-      <div id="card" class="hide"><b id="cardT"></b></div>
-      <div id="off" class="hide"></div>
+      <div id="toast">
+        <div class="dlg">
+          <div class="bico">!</div>
+          <div class="t1">Batería baja: 3 %</div>
+          <div class="t2">Queda poco. El teléfono se apagará pronto.</div>
+          <div class="acts"><span id="cancel">Cancelar<i class="rip"></i></span><span>Ahorro de batería</span></div>
+        </div>
+      </div>
+
+      <div id="notes"></div>
+
+      <div id="off"><div class="inner">
+        <div class="spin"></div><div class="lbl">Apagando…</div>
+      </div></div>
     </div>
   </div>
+  <div class="cam"></div>
 
-  <div id="meme" class="hide"><img id="memeImg" alt="" /><div class="ph" id="memePh">Pon tu imagen en <b>assets/meme.jpg</b><br />(o cárgala con el botón de abajo)</div></div>
-
-  <div id="slate" class="hide">
-    <div class="n" id="slateN">Caso 1</div>
-    <div class="bar"></div>
-    <div class="ti" id="slateT"></div>
+  <div id="slate">
+    <div class="kicker">Inteligencia artificial en el ICFES</div>
+    <div class="num" id="snum">1</div>
+    <div class="ttl" id="sttl"></div>
+    <div class="rule"></div>
   </div>
 
-  <div id="guides" class="hide">
-    <div class="g" style="top:0"></div>
-    <div class="g" style="top:860px"></div>
-    <div class="lbl" style="top:864px">zona UI de Shorts ↓</div>
-  </div>
-</div>
+  <div id="photo"><img id="pimg" alt=""></div>
 
-<div id="bar">
-  <button class="pri" id="bPlay">▶ Reproducir</button>
-  <button id="bStop">■ Parar</button>
-  <button id="bSafe">Zona segura: ON</button>
-  <button id="bGuides">Guías: OFF</button>
-  <label for="fMeme">🖼 Imagen manual</label><input type="file" id="fMeme" accept="image/*" />
-  <button id="bRec">⏺ Grabar pantalla (.webm)</button>
-  <span class="sp" id="info">—</span>
-  <input type="range" id="scrub" min="0" max="1000" value="0" />
+  <div id="guides">
+    <div class="band top"></div><div class="band right"></div><div class="band bottom"></div>
+    <div class="lbl">zona segura ↑ · perfil y stats ↓</div>
+  </div>
+</div></div>
+
+<div id="ui">
+  <b>Reproducir:</b>
+  <button id="all" class="sel">▶ Programa completo</button>
+  <button data-c="0">Caso 1</button>
+  <button data-c="1">Caso 2</button>
+  <button data-c="2">Caso 3</button>
+  <button data-c="3">Caso 4</button>
+  <button data-c="4">Caso 5</button>
+  <button data-c="5">Caso 6</button>
+  <div class="sep"></div>
+  <b>Ritmo:</b>
+  <button data-s="0.7">lento</button>
+  <button data-s="1" class="sel">normal</button>
+  <button data-s="1.5">rápido</button>
+  <div class="sep"></div>
+  <label for="file">🖼 Cargar tu foto</label><input type="file" id="file" accept="image/*">
+  <button id="sound" class="sel">🔊 Sonido (M)</button>
+  <button id="safe" class="sel">Zona segura (S)</button>
+  <button id="grid">Guías (G)</button>
+  <div class="sep"></div>
+  <button id="again">↻ Reiniciar (R)</button>
+  <button id="hide">Ocultar (H)</button>
 </div>
 
 <script>
-/* =====================================================================
-   CASOS ICFES · página autocontenida y determinista
-   ---------------------------------------------------------------------
-   La animación NO usa setTimeout/await sleep: se construye una línea de
-   tiempo declarativa a partir de CASES y todo el estado del DOM es una
-   función pura del instante t.  Exporta:
-       window.__duration()      -> duración total en ms
-       window.__seek(tMs)       -> pone el DOM en el estado exacto de tMs
-       window.__renderAudio()   -> renderiza el audio offline (WAV base64)
-       window.__ready           -> true cuando la imagen ya cargó
-   ===================================================================== */
+const PROMPT = "ola chatgpt ayudame porfa es q son las 4:30 dela tarde y solo e respondido 35 pregutas de 400 la profe ya esta resojiendo las ojas dime las respuestas rapido nolas boy a copiar todas solo las q balen mas puntos 🙏";
 
-/* ------------------------- 1. DATOS: LOS CASOS ------------------------ */
+/* ── los casos ────────────────────────────────────────────── */
 const CASES = [
   {
-    titulo: "El resumen de última hora",
-    hora: "11:52",
+    titulo: "El que no pagó",
+    head: {title:"ChatGPT", sub:"4o ▾", wa:false},
     beats: [
-      { t:"meta", text:"11:52 p.m. · un día antes del ICFES", dur:1700 },
-      { t:"user", text:"resúmeme TODO lectura crítica 😭" },
-      { t:"ai",   text:"Claro. Aquí tienes 14 páginas.", think:1300 },
-      { t:"user", text:"más corto" },
-      { t:"ai",   text:"Lee. Con calma. Es literal todo lo que hay.", think:1500 },
-      { t:"batt", pct:15, alerta:true, dur:1500 },
-      { t:"user", text:"más corto todavía" },
-      { t:"wait", dur:700 },
-      { t:"off",  dur:900 }
+      {t:"user", text:PROMPT, dialog:true},
+      {t:"ai", text:"Claro. Dime cuál.", think:1500},
+      {t:"user", text:"cualquiera", pace:62},
+      {t:"aiCut", think:2200, lead:"Claro, con gusto te ayudo. La respuesta de la pregunta 36 es",
+       card:{h:"Se te acabó el límite de mensajes gratis",
+             p:"Vuelve a intentarlo en 4 horas y 12 minutos, o pásate a Premium para seguir ahora mismo.",
+             cta:"Pásate a Premium"}},
+      {t:"note", who:"11-B", msg:"GUARDA EL CELULAR!! EL PROFE ESTÁ DETRÁS DE TI 😭", wait:2300, lead:1300},
+      {t:"note", who:"Mamá", msg:"Mi amor cómo te fue? Ya le conté a toda la familia 🥰", wait:2100},
+      {t:"note", who:"ICFES", msg:"Examen anulado: uso de dispositivos electrónicos.", kind:"of", wait:2500},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
     ]
   },
   {
-    titulo: "Modo avión",
-    hora: "07:14",
+    titulo: "El que fue regañado por la IA",
+    head: {title:"ChatGPT", sub:"4o ▾", wa:false},
     beats: [
-      { t:"meta", text:"7:14 a.m. · bloque 1, pregunta 14", dur:1600 },
-      { t:"user", text:"¿la 14? rápido porfa" },
-      { t:"aiCut", text:"La respuesta correcta es la", think:2600, card:"SIN SEÑAL" },
-      { t:"note", titulo:"Salón 203", texto:"Entregue el celular, por favor.", dur:2200 },
-      { t:"off",  dur:900 }
+      {t:"user", text:PROMPT, dialog:true},
+      {t:"ai", text:"No puedo ayudarte a responder un examen. Pero cuando termines puedo explicarte los temas para la próxima vez que lo presentes.", think:2400},
+      {t:"user", text:"la proxima vez?", pace:44},
+      {t:"note", who:"ICFES", msg:"Inscripción para la siguiente aplicación: $ 78.900", kind:"of", wait:2800},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
     ]
   },
   {
-    titulo: "Confía, mano",
-    hora: "09:40",
+    titulo: "El que quedó en el mismo punto",
+    head: {title:"ChatGPT", sub:"4o ▾", wa:false},
     beats: [
-      { t:"user", text:"¿seguro es la C?" },
-      { t:"ai",   text:"Segurísimo. Es la C. 100%.", think:1100 },
-      { t:"meta", text:"tres meses después", dur:1700 },
-      { t:"ai",   text:"Era la A. Perdón, alucine un poquito.", think:1700 },
-      { t:"note", titulo:"Resultados ICFES", texto:"Ya puedes consultar tu puntaje.", dur:2200 },
-      { t:"off",  dur:900 }
+      {t:"user", text:PROMPT, dialog:true},
+      {t:"ai", text:"¡Con gusto te ayudo! Para empezar, ¿podrías compartirme el enunciado de cada pregunta? 😊", think:2000},
+      {t:"user", text:"son 365 preguntas", pace:44},
+      {t:"ai", text:"Perfecto. Puedes enviarlas una por una.", think:1600},
+      {t:"note", who:"11-B", msg:"FALTAN 4 MINUTOS", wait:2200},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
+    ]
+  },
+  {
+    titulo: "El que le creyó",
+    head: {title:"ChatGPT", sub:"4o ▾", wa:false},
+    beats: [
+      {t:"user", text:"chatgpt la 36 rapido q me estan mirando", pace:36},
+      {t:"ai", text:"La respuesta correcta es la opción E.", think:1900},
+      {t:"user", text:"aqui solo ay hasta la D", pace:44},
+      {t:"ai", text:"Tienes toda la razón, disculpa. Entonces es la D.", think:1700},
+      {t:"user", text:"seguro?", pace:70},
+      {t:"ai", text:"Sí. O la B.", think:2400},
+      {t:"note", who:"ICFES", msg:"Resultados disponibles. Puntaje global: 187 de 500.", kind:"of", wait:2800, lead:1400},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
+    ]
+  },
+  {
+    titulo: "El que se equivocó de chat",
+    head: {title:"Profe Yolanda", sub:"en línea", wa:true},
+    beats: [
+      {t:"user", text:PROMPT, dialog:true},
+      {t:"meta", text:"Visto 4:31 PM", vist:true},
+      {t:"wait", ms:1100},
+      {t:"ai", wa:true, text:"Buenas tardes, Julián.", think:1800},
+      {t:"ai", wa:true, text:"¿Sabe que yo soy la que está parada detrás de usted?", think:1700},
+      {t:"note", who:"11-B", msg:"JAJAJAJA HERMANO LE ESCRIBISTE A LA PROFE 💀", wait:2600, lead:1200},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
+    ]
+  },
+  {
+    titulo: "El que no leyó la pregunta",
+    head: {title:"ChatGPT", sub:"4o ▾", wa:false},
+    beats: [
+      {t:"user", text:PROMPT, dialog:true},
+      {t:"ai", text:"Claro. ¿La 36 es de matemáticas o de lectura crítica?", think:1500},
+      {t:"user", text:"no se, no la e leido", pace:44},
+      {t:"ai", text:"Entiendo. ¿Puedes leerla y decirme?", think:2200},
+      {t:"user", text:"no ay tiempo", pace:52},
+      {t:"ai", text:"Ese es el problema, no yo.", think:1800},
+      {t:"note", who:"11-B", msg:"FALTAN 2 MINUTOS", wait:2200},
+      {t:"batt", pct:"2%"},
+      {t:"off"}
     ]
   }
 ];
 
-/* --------------------------- 2. TIEMPOS BASE -------------------------- */
-const TIM = {
-  slate:      1500,   // cortinilla CASO n
-  slateGap:    180,   // negro después de la cortinilla
-  perChar:      46,   // ms por letra tecleada
-  minType:     420,
-  sendPause:   320,   // pausa entre terminar de escribir y enviar
-  thinkDef:   1400,
-  readBase:    780,   // pausa de lectura después de un mensaje de la IA
-  readPerCh:    26,
-  readMax:    2500,
-  msgIn:       220,   // animación de entrada de una burbuja
-  notifIn:     280,
-  notifOut:    280,
-  meme:       2200,   // imagen entre casos
-  memeFade:    220,
-  tailBlack:   200    // negro final (corto: el short se repite en bucle)
-};
+let speed = 1, run = 0, mode = "all", only = 0, photoURL = null;
 
-/* ------------------------ 3. LÍNEA DE TIEMPO -------------------------- */
-/* Cada evento: { t0, dur, kind, ...datos }.  Los eventos son ordenados y
-   el estado de un instante se obtiene reproduciéndolos en orden.        */
-
-function buildTimeline(cases){
-  const ev = [];
-  let t = 0;
-  const push = (kind, t0, dur, data) => { ev.push(Object.assign({kind, t0, dur:dur||0}, data||{})); };
-
-  cases.forEach((c, ci) => {
-    /* cortinilla */
-    push("case", t, 0, { ci, hora:c.hora });
-    push("slate", t, TIM.slate, { n:c.n != null ? c.n : ci+1, titulo:c.titulo });
-    push("slateHit", t, 0, {});
-    t += TIM.slate + TIM.slateGap;
-
-    /* beats */
-    c.beats.forEach(b => {
-      if (b.t === "user"){
-        const typeDur = Math.max(TIM.minType, b.text.length * TIM.perChar);
-        push("type", t, typeDur, { text:b.text });
-        t += typeDur + TIM.sendPause;
-        push("msg", t, 0, { who:"me", text:b.text });
-        push("whoosh", t, 0, {});
-        t += 420;
-      }
-      else if (b.t === "ai" || b.t === "aiCut"){
-        const think = b.think || TIM.thinkDef;
-        push("think", t, think, {});
-        t += think;
-        push("msg", t, 0, { who:"ai", text:b.text });
-        push("pop", t, 0, {});
-        if (b.t === "aiCut"){
-          t += 260;
-          const cd = b.cardDur || 1500;
-          push("card", t, cd, { text:b.card });
-          push("slateHit", t, 0, {});
-          t += cd;
-        } else {
-          t += Math.min(TIM.readMax, TIM.readBase + b.text.length * TIM.readPerCh);
-        }
-      }
-      else if (b.t === "note"){
-        const d = b.dur || 2200;
-        push("notif", t, d, { titulo:b.titulo, texto:b.texto });
-        push("ding", t + TIM.notifIn * .5, 0, {});
-        t += d + 200;
-      }
-      else if (b.t === "meta"){
-        const d = b.dur || 1600;
-        push("meta", t, d, { text:b.text });
-        t += d;
-      }
-      else if (b.t === "batt"){
-        const d = b.dur || 1400;
-        push("batt", t, 0, { pct:b.pct });
-        if (b.alerta){
-          push("battdlg", t, d, { pct:b.pct });
-          push("battAlert", t, 0, {});
-          t += d + 200;
-        }
-      }
-      else if (b.t === "wait"){
-        t += b.dur || 600;
-      }
-      else if (b.t === "off"){
-        const d = b.dur || 900;
-        push("off", t, d, {});
-        push("power", t, 0, {});
-        t += d;
-      }
-    });
-
-    /* imagen entre casos (no después del último) */
-    if (ci < cases.length - 1){
-      push("meme", t, TIM.meme, {});
-      t += TIM.meme;
-    }
-  });
-
-  t += TIM.tailBlack;
-  ev.sort((a,b) => a.t0 - b.t0);
-  return { events:ev, duration:t };
-}
-
-/* --------------------- 4. SELECCIÓN DE CASO (?caso=) ------------------ */
-const QS = new URLSearchParams(location.search);
-const CASO = parseInt(QS.get("caso") || "0", 10);
-const ACTIVE = (CASO >= 1 && CASO <= CASES.length)
-  ? [Object.assign({}, CASES[CASO-1], { n:CASO })]
-  : CASES.map((c,i) => Object.assign({}, c, { n:i+1 }));
-
-const TL = buildTimeline(ACTIVE);
-
-/* ------------------------------ 5. DOM -------------------------------- */
 const $ = id => document.getElementById(id);
-const D = {
-  canvas:$("canvas"), chat:$("chat"), field:$("field"), fieldtx:$("fieldtx"), caret:$("caret"),
-  notif:$("notif"), notifT:$("notifT"), notifS:$("notifS"),
-  meta:$("meta"), metaT:$("metaT"),
-  battdlg:$("battdlg"), battT:$("battT"), battS:$("battS"),
-  card:$("card"), cardT:$("cardT"), off:$("off"),
-  slate:$("slate"), slateN:$("slateN"), slateT:$("slateT"),
-  meme:$("meme"), memeImg:$("memeImg"), memePh:$("memePh"),
-  batt:$("batt"), battpct:$("battpct"), statusbar:$("statusbar"),
-  clock:$("clock"), sig:$("sig"), guides:$("guides"),
-  act:$("act"), icMic:$("icMic"), icSend:$("icSend")
-};
+const canvas=$("canvas"), feed=$("feed"), input=$("input"), send=$("send"),
+      toast=$("toast"), cancel=$("cancel"), off=$("off"), pct=$("pct"),
+      notes=$("notes"), slate=$("slate"), photo=$("photo"), pimg=$("pimg"),
+      guides=$("guides"), head=$("head"), htitle=$("htitle"), hsub=$("hsub");
 
-const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
-const ease  = p => 1 - Math.pow(1 - p, 3);
 
-/* --------------------- 6. ESTADO EN FUNCIÓN DE t ---------------------- */
-function stateAt(t){
-  const s = {
-    ci:0, hora:"11:52", msgs:[], input:null, inputT:0, thinking:false, thinkT:0,
-    notif:null, notifP:0, meta:null, metaP:0, batt:100, battdlg:null, battdlgP:0,
-    card:null, cardP:0, off:0, slate:null, slateP:0, meme:0, dead:false
-  };
-  for (let i = 0; i < TL.events.length; i++){
-    const e = TL.events[i];
-    if (e.t0 > t) break;
-    const l = t - e.t0;                 // tiempo local dentro del evento
-    switch (e.kind){
-      case "case":
-        /* arranca un caso nuevo: el celular vuelve a estar encendido.
-           Sin reiniciar `off`, el apagado del caso anterior tapaba con negro
-           todo lo que viniera después. */
-        s.ci = e.ci; s.hora = e.hora; s.msgs = [];
-        s.batt = 100; s.dead = false; s.off = 0;
-        break;
-      case "slate":
-        if (l < e.dur){ s.slate = { n:e.n, titulo:e.titulo }; s.slateP = l / e.dur; }
-        break;
-      case "type": {
-        if (l < e.dur){
-          const n = Math.min(e.text.length, Math.floor(l / TIM.perChar));
-          s.input = e.text.slice(0, n); s.inputT = l;
-        } else { s.input = e.text; s.inputT = l; }
-        break;
-      }
-      case "msg":
-        s.msgs.push({ who:e.who, text:e.text, p:clamp(l / TIM.msgIn, 0, 1) });
-        s.input = null;
-        break;
-      case "think":
-        if (l < e.dur){ s.thinking = true; s.thinkT = l; }
-        break;
-      case "notif":
-        if (l < e.dur){
-          s.notif = { titulo:e.titulo, texto:e.texto };
-          s.notifP = l < TIM.notifIn ? ease(l / TIM.notifIn)
-                   : l > e.dur - TIM.notifOut ? 1 - ease((l - (e.dur - TIM.notifOut)) / TIM.notifOut)
-                   : 1;
-        }
-        break;
-      case "meta":
-        if (l < e.dur){ s.meta = e.text; s.metaP = clamp(l / 260, 0, 1) * clamp((e.dur - l) / 260, 0, 1); }
-        break;
-      case "batt":
-        s.batt = e.pct; break;
-      case "battdlg":
-        if (l < e.dur){ s.battdlg = e.pct; s.battdlgP = clamp(l / 200, 0, 1); }
-        break;
-      case "card":
-        if (l < e.dur){ s.card = e.text; s.cardP = clamp(l / 180, 0, 1); s.dead = true; }
-        else { s.dead = true; }
-        break;
-      case "off":
-        s.off = clamp(l / (e.dur * .55), 0, 1); break;
-      case "meme":
-        if (l < e.dur){
-          s.meme = l < TIM.memeFade ? l / TIM.memeFade
-                 : l > e.dur - TIM.memeFade ? (e.dur - l) / TIM.memeFade
-                 : 1;
-        }
-        break;
-    }
+/* ── sonido generado por código ────────────────────────────── */
+let AC = null, master = null, sfxOn = true, clockTimer = null;
+function ac(){
+  if (!AC){
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = sfxOn ? 0.35 : 0;
+    master.connect(AC.destination);
   }
-  return s;
+  if (AC.state === "suspended") AC.resume();
+  return AC;
 }
-
-/* ------------------------- 7. PINTAR EL DOM --------------------------- */
-let lastSig = "";
-
-function applyState(s){
-  /* --- chat --- */
-  const sig = s.msgs.map(m => m.who + "|" + m.text).join("¬") + "¬think:" + (s.thinking ? 1 : 0);
-  if (sig !== lastSig){
-    lastSig = sig;
-    D.chat.innerHTML = "";
-    s.msgs.forEach(m => {
-      const row = document.createElement("div");
-      row.className = "row " + (m.who === "me" ? "me" : "ai");
-      const b = document.createElement("div");
-      b.className = "bub";
-      b.textContent = m.text;
-      row.appendChild(b);
-      D.chat.appendChild(row);
-    });
-    if (s.thinking){
-      const row = document.createElement("div");
-      row.className = "row ai";
-      row.id = "typingRow";
-      row.innerHTML = '<div class="bub"><span class="typing"><i></i></span></div>';
-      D.chat.appendChild(row);
-    }
-  }
-  /* animación de entrada de la última burbuja (siempre recalculada) */
-  const rows = D.chat.querySelectorAll(".row");
-  s.msgs.forEach((m, i) => {
-    const r = rows[i]; if (!r) return;
-    r.style.opacity = m.p.toFixed(3);
-    r.style.transform = "translateY(" + ((1 - ease(m.p)) * 12).toFixed(2) + "px)";
-  });
-  if (s.thinking){
-    /* el punto de ChatGPT late; la fase sale del tiempo, no de una animación CSS */
-    const dot = document.querySelector("#typingRow .typing i");
-    if (dot){
-      const k = .74 + .26 * (.5 + .5 * Math.sin((s.thinkT / 1000) * Math.PI * 1.8));
-      dot.style.transform = "scale(" + k.toFixed(3) + ")";
-      dot.style.opacity = (.5 + .5 * k).toFixed(3);
-    }
-  }
-  D.chat.scrollTop = D.chat.scrollHeight;
-
-  /* --- barra de escritura --- */
-  const escribiendo = s.input !== null && s.input.length > 0;
-  if (s.input !== null){
-    D.fieldtx.textContent = s.input;
-    D.field.classList.toggle("empty", s.input.length === 0);
-    D.caret.style.opacity = (Math.floor(s.inputT / 480) % 2 === 0) ? "1" : "0";
-  } else {
-    D.fieldtx.textContent = "Pregunta lo que quieras";
-    D.field.classList.add("empty");
-    D.caret.style.opacity = "0";
-  }
-  /* micrófono ↔ flecha de enviar, igual que en la app */
-  D.act.classList.toggle("send", escribiendo);
-  D.icMic.classList.toggle("hide", escribiendo);
-  D.icSend.classList.toggle("hide", !escribiendo);
-
-  /* --- barra de estado --- */
-  D.clock.textContent = s.hora;
-  D.battpct.textContent = s.batt + "%";
-  D.batt.querySelector("b").style.width = Math.max(2, (s.batt / 100) * 19).toFixed(1) + "px";
-  D.batt.classList.toggle("low", s.batt <= 20);
-  D.statusbar.classList.toggle("low", s.batt <= 20);
-  D.sig.classList.toggle("dead", s.dead);
-
-  /* --- overlays --- */
-  show(D.notif, !!s.notif, () => {
-    D.notifT.textContent = s.notif.titulo; D.notifS.textContent = s.notif.texto;
-    D.notif.style.opacity = s.notifP.toFixed(3);
-    D.notif.style.transform = "translateY(" + ((s.notifP - 1) * 84).toFixed(2) + "px)";
-  });
-  show(D.meta, !!s.meta, () => {
-    D.metaT.textContent = s.meta;
-    D.meta.style.opacity = s.metaP.toFixed(3);
-    /* el desplazamiento va en la píldora, no en el velo, para que el fondo
-       no se despegue del borde del chat */
-    D.metaT.style.transform = "translateY(" + ((1 - s.metaP) * 8).toFixed(2) + "px)";
-  });
-  show(D.battdlg, s.battdlg !== null, () => {
-    D.battT.textContent = "Batería baja";
-    D.battS.textContent = "Queda " + s.battdlg + "%";
-    D.battdlg.style.opacity = s.battdlgP.toFixed(3);
-    const k = .92 + .08 * ease(s.battdlgP);
-    D.battdlg.style.transform = "translate(-50%,-50%) scale(" + k.toFixed(3) + ")";
-  });
-  show(D.card, !!s.card, () => {
-    D.cardT.textContent = s.card;
-    D.card.style.opacity = s.cardP.toFixed(3);
-    const k = 1.06 - .06 * ease(s.cardP);
-    D.cardT.style.transform = "scale(" + k.toFixed(3) + ")";
-  });
-  show(D.off, s.off > 0, () => {
-    /* barrido de apagado: la pantalla colapsa hacia una línea y se apaga */
-    const p = ease(s.off);
-    D.off.style.opacity = Math.min(1, s.off * 2.2).toFixed(3);
-    D.off.style.clipPath = "inset(" + (p * 0).toFixed(1) + "% 0 0 0)";
-  });
-  show(D.slate, !!s.slate, () => {
-    D.slateN.textContent = "Caso " + s.slate.n;
-    D.slateT.textContent = s.slate.titulo;
-    const p = s.slateP;
-    const inP = clamp(p / .16, 0, 1), outP = clamp((1 - p) / .12, 0, 1);
-    D.slate.style.opacity = Math.min(inP, outP).toFixed(3);
-    D.slateT.style.transform = "translateY(" + ((1 - ease(inP)) * 14).toFixed(2) + "px)";
-    D.slateN.style.letterSpacing = (7 + (1 - ease(inP)) * 10).toFixed(2) + "px";
-  });
-  show(D.meme, s.meme > 0, () => { D.meme.style.opacity = s.meme.toFixed(3); });
-}
-
-function show(el, on, paint){
-  if (on){ el.classList.remove("hide"); paint(); }
-  else if (!el.classList.contains("hide")) el.classList.add("hide");
-}
-
-/* ============================ 8. AUDIO ================================
-   Módulo compartido: recibe cualquier BaseAudioContext, así los mismos
-   efectos suenan en la vista previa (AudioContext) y en el render
-   determinista (OfflineAudioContext).                                   */
-
-function makeSFX(ctx, dest){
-  const out = ctx.createGain();
-  out.gain.value = .9;
-  out.connect(dest || ctx.destination);
-
-  function noiseBuf(sec){
-    const n = Math.max(1, Math.floor(ctx.sampleRate * sec));
-    const b = ctx.createBuffer(1, n, ctx.sampleRate);
-    const d = b.getChannelData(0);
-    let seed = 12345;
-    for (let i = 0; i < n; i++){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; d[i] = (seed / 0x3fffffff) - 1; }
-    return b;
-  }
-
-  function env(node, t, a, d, peak){
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + a);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
-    node.connect(g); g.connect(out);
-    return g;
-  }
-
-  function tone(t, f, a, d, peak, type, f2){
-    const o = ctx.createOscillator();
-    o.type = type || "sine";
-    o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + a + d);
-    env(o, t, a, d, peak);
-    o.start(t); o.stop(t + a + d + .02);
-  }
-
-  function noise(t, sec, freq, q, peak, type){
-    const src = ctx.createBufferSource();
-    src.buffer = noiseBuf(sec);
-    const f = ctx.createBiquadFilter();
-    f.type = type || "bandpass"; f.frequency.setValueAtTime(freq, t); f.Q.value = q || 1;
-    src.connect(f);
-    env(f, t, .004, sec, peak);
-    src.start(t); src.stop(t + sec + .02);
-  }
-
-  return {
-    key(t){ noise(t, .022, 2400, 2.2, .07, "bandpass"); tone(t, 900, .003, .022, .035, "square"); },
-    whoosh(t){ noise(t, .16, 1400, .8, .07, "bandpass"); },
-    pop(t){ tone(t, 420, .006, .09, .10, "sine", 700); },
-    ding(t){ tone(t, 880, .006, .18, .10); tone(t + .09, 1320, .006, .26, .085); },
-    battAlert(t){ tone(t, 660, .006, .13, .11, "triangle"); tone(t + .18, 520, .006, .2, .11, "triangle"); },
-    tick(t){ noise(t, .018, 3000, 3, .045, "bandpass"); },
-    slateHit(t){ tone(t, 150, .004, .34, .22, "sine", 48); noise(t, .09, 700, .7, .10, "lowpass"); },
-    power(t){ tone(t, 760, .01, .48, .13, "sawtooth", 58); noise(t, .5, 900, .5, .05, "lowpass"); }
-  };
-}
-
-/* Programa TODOS los efectos de la línea de tiempo sobre un contexto.
-   t0Sec = instante del contexto que corresponde a t=0 de la animación.  */
-function scheduleAudio(ctx, dest, t0Sec){
-  const sfx = makeSFX(ctx, dest);
-  const S = ms => t0Sec + ms / 1000;
-  TL.events.forEach(e => {
-    switch (e.kind){
-      case "type": {
-        const n = Math.min(e.text.length, Math.floor(e.dur / TIM.perChar));
-        for (let i = 0; i < n; i++){
-          if (e.text[i] === " ") continue;
-          sfx.key(S(e.t0 + i * TIM.perChar));
-        }
-        break;
-      }
-      case "whoosh":   sfx.whoosh(S(e.t0)); break;
-      case "pop":      sfx.pop(S(e.t0)); break;
-      case "ding":     sfx.ding(S(e.t0)); break;
-      case "battAlert":sfx.battAlert(S(e.t0)); break;
-      case "slateHit": sfx.slateHit(S(e.t0)); break;
-      case "power":    sfx.power(S(e.t0)); break;
-      case "think": {
-        /* reloj tic-tac mientras la IA "piensa" */
-        for (let m = 220; m < e.dur - 80; m += 480) sfx.tick(S(e.t0 + m));
-        break;
-      }
-    }
-  });
-}
-
-/* --------------- 9. RENDER OFFLINE DEL AUDIO (para Node) -------------- */
-function encodeWav(buf){
-  const ch = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
-  const bytes = 44 + len * ch * 2;
-  const ab = new ArrayBuffer(bytes), v = new DataView(ab);
-  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-  ws(0, "RIFF"); v.setUint32(4, bytes - 8, true); ws(8, "WAVE");
-  ws(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
-  v.setUint16(22, ch, true); v.setUint32(24, sr, true);
-  v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
-  ws(36, "data"); v.setUint32(40, len * ch * 2, true);
-  const chans = [];
-  for (let c = 0; c < ch; c++) chans.push(buf.getChannelData(c));
-  let o = 44;
-  for (let i = 0; i < len; i++){
-    for (let c = 0; c < ch; c++){
-      let x = chans[c][i];
-      x = x < -1 ? -1 : x > 1 ? 1 : x;
-      v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7fff, true); o += 2;
-    }
-  }
-  return new Uint8Array(ab);
-}
-
-function b64(u8){
-  let s = "";
-  const CH = 0x8000;
-  for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
-  return btoa(s);
-}
-
-window.__renderAudio = async function(sampleRate){
-  const sr = sampleRate || 48000;
-  const secs = TL.duration / 1000;
-  const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  const ctx = new OC(2, Math.ceil(secs * sr), sr);
-  scheduleAudio(ctx, ctx.destination, 0);
-  const buf = await ctx.startRendering();
-  window.__wav = b64(encodeWav(buf));
-  return window.__wav.length;
-};
-window.__wavSlice = (a, b) => window.__wav.slice(a, b);
-
-/* ------------------------ 10. API DE EXPORTACIÓN ---------------------- */
-window.__duration = () => TL.duration;
-window.__seek = t => { applyState(stateAt(clamp(t, 0, TL.duration))); };
-window.__timeline = () => ({ duration:TL.duration, events:TL.events });
-
-/* ------------------------ 11. IMAGEN ENTRE CASOS ---------------------- */
-window.__ready = false;
-(function loadMeme(){
-  const src = QS.get("meme") || "assets/meme.jpg";
-  const img = new Image();
-  img.onload  = () => { D.memeImg.src = img.src; D.memePh.classList.add("hide"); window.__ready = true; };
-  img.onerror = () => { D.memeImg.style.display = "none"; window.__ready = true; };
-  img.src = src;
-})();
-
-/* --------------------- 12. VISTA PREVIA EN NAVEGADOR ------------------ */
-let raf = null, actx = null, playT0 = 0;
-
-function stopPlay(){
-  if (raf) cancelAnimationFrame(raf), raf = null;
-  if (actx){ actx.close(); actx = null; }
-}
-
-$("bPlay").onclick = () => {
-  stopPlay();
-  actx = new (window.AudioContext || window.webkitAudioContext)();
-  scheduleAudio(actx, actx.destination, actx.currentTime + .08);
-  playT0 = performance.now();
-  const loop = () => {
-    const t = performance.now() - playT0;
-    window.__seek(t);
-    $("scrub").value = Math.round((t / TL.duration) * 1000);
-    $("info").textContent = (t / 1000).toFixed(1) + "s / " + (TL.duration / 1000).toFixed(1) + "s";
-    if (t < TL.duration) raf = requestAnimationFrame(loop); else stopPlay();
-  };
-  loop();
-};
-$("bStop").onclick = () => { stopPlay(); window.__seek(0); };
-$("scrub").oninput = e => { stopPlay(); window.__seek((e.target.value / 1000) * TL.duration); };
-
-$("bSafe").onclick = e => {
-  D.canvas.classList.toggle("safe");
-  e.target.textContent = "Zona segura: " + (D.canvas.classList.contains("safe") ? "ON" : "OFF");
-};
-$("bGuides").onclick = e => {
-  D.guides.classList.toggle("hide");
-  e.target.textContent = "Guías: " + (D.guides.classList.contains("hide") ? "OFF" : "ON");
-};
-$("fMeme").onchange = e => {
-  const f = e.target.files[0]; if (!f) return;
-  D.memeImg.style.display = "block";
-  D.memeImg.src = URL.createObjectURL(f);
-  D.memePh.classList.add("hide");
-};
-
-/* Grabador manual heredado (queda como respaldo; el pipeline de Node
-   produce un mp4 mucho más limpio con `npm run render`).               */
-let rec = null;
-$("bRec").onclick = async () => {
-  if (rec){ rec.stop(); rec = null; $("bRec").textContent = "⏺ Grabar pantalla (.webm)"; return; }
+function osc(f0, f1, dur, type, vol, cutoff){
   try{
-    const st = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:30 }, audio:true });
-    const chunks = [];
-    rec = new MediaRecorder(st, { mimeType:"video/webm;codecs=vp9,opus", videoBitsPerSecond: 8e6 });
-    rec.ondataavailable = ev => ev.data.size && chunks.push(ev.data);
-    rec.onstop = () => {
-      st.getTracks().forEach(tr => tr.stop());
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob(chunks, { type:"video/webm" }));
-      a.download = "casos_icfes.webm"; a.click();
-    };
-    rec.start();
-    $("bRec").textContent = "⏹ Detener grabación";
-    $("bPlay").click();
-  }catch(err){ alert("No se pudo iniciar la grabación: " + err.message); }
+    const a = ac(), t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let node = o;
+    if (cutoff){
+      const lp = a.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = cutoff;
+      o.connect(lp); node = lp;
+    }
+    node.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }catch(e){}
+}
+const sfx = {
+  key:   () => osc(1600, 1200, 0.018, "square", 0.05),
+  tap:   () => osc(1000, 700,  0.05,  "sine",   0.14),
+  send:  () => osc(700, 1400,  0.09,  "sine",   0.12),
+  alert: () => { osc(880, 880, 0.14, "sine", 0.18); setTimeout(() => osc(660, 660, 0.20, "sine", 0.18), 160); },
+  note:  () => { osc(1046, 1046, 0.10, "sine", 0.16); setTimeout(() => osc(1568, 1568, 0.16, "sine", 0.14), 90); },
+  oficial: () => { osc(523, 523, 0.13, "triangle", 0.16); setTimeout(() => osc(392, 392, 0.28, "triangle", 0.16), 140); },
+  slate: () => { osc(80, 45, 0.45, "sine", 0.34); osc(180, 60, 0.22, "triangle", 0.10); },
+  power: () => osc(320, 38, 1.30, "sawtooth", 0.22, 900),
+  tick:  () => osc(2100, 1700, 0.012, "square", 0.07),
+  clockOn: () => {
+    if (clockTimer) return;
+    sfx.tick();
+    clockTimer = setInterval(() => sfx.tick(), 620 / speed);
+  },
+  clockOff: () => { clearInterval(clockTimer); clockTimer = null; }
 };
+addEventListener("pointerdown", ac, {once:true});
+addEventListener("keydown", ac, {once:true});
 
-/* Modo exportación: sin controles ni guías (lo activa Playwright) */
-if (QS.get("det") === "1"){
-  $("bar").style.display = "none";
-  D.guides.classList.add("hide");
-  document.body.style.display = "block";
-  document.documentElement.style.background = "#000";
+const sleep = ms => new Promise(r => setTimeout(r, ms / speed));
+
+let gate = null;
+function holdTyping(){
+  let release;
+  gate = new Promise(r => release = r);
+  return () => { gate = null; release(); };
 }
 
-/* estado inicial */
-window.__seek(0);
-$("info").textContent = "0.0s / " + (TL.duration / 1000).toFixed(1) + "s";
+function fit(){
+  const bar = $("ui");
+  const uiH = bar.classList.contains("hide") ? 0 : bar.offsetHeight + 6;
+  canvas.style.transform = "scale(" + Math.min(innerWidth/540, (innerHeight-uiH)/960) + ")";
+}
+addEventListener("resize", fit);
+
+async function type(el, str, base){
+  el.textContent = "";
+  const caret = document.createElement("i");
+  caret.className = "caret";
+  let i = 0;
+  for (const ch of Array.from(str)){
+    if (gate){ el.appendChild(caret); await gate; }
+    el.textContent += ch;
+    if (el === input && ch !== " " && (i++ % 2 === 0)) sfx.key();
+    el.appendChild(caret);
+    let d = base + Math.random() * base * 0.9;
+    if (ch === " ") d *= 0.5;
+    await sleep(d);
+    caret.remove();
+  }
+  el.appendChild(caret);
+  return caret;
+}
+
+async function batteryDialog(me){
+  if (me !== run) return;
+  const resume = holdTyping();
+  sfx.alert();
+  toast.classList.add("on");
+  await sleep(4500);
+  if (me !== run){ resume(); return; }
+  sfx.tap();
+  cancel.classList.add("tap");
+  await sleep(520);
+  if (me !== run){ resume(); return; }
+  toast.classList.remove("on");
+  await sleep(350);
+  cancel.classList.remove("tap");
+  resume();
+}
+
+/* ── intérprete de beats ──────────────────────────────────── */
+async function runCase(c, me){
+  sfx.clockOff();
+  feed.innerHTML = "";
+  notes.innerHTML = "";
+  input.textContent = "";
+  input.classList.add("empty");
+  send.classList.remove("on");
+  toast.classList.remove("on");
+  cancel.classList.remove("tap");
+  off.classList.remove("on","gone");
+  gate = null;
+  pct.textContent = "3%";
+  htitle.firstChild.textContent = c.head.title + " ";
+  hsub.textContent = c.head.sub;
+  head.classList.toggle("wa", !!c.head.wa);
+  await sleep(700);
+  if (me !== run) return;
+
+  let lastRow = null;
+
+  for (const b of c.beats){
+    if (me !== run) return;
+
+    if (b.t === "user"){
+      if (b.dialog) setTimeout(() => batteryDialog(me), 2200 / speed);
+      input.classList.remove("empty");
+      const caret = await type(input, b.text, b.pace || 34);
+      if (me !== run) return;
+      send.classList.add("on");
+      await sleep(620);
+      if (me !== run) return;
+      caret.remove();
+      sfx.send();
+      input.textContent = "";
+      input.classList.add("empty");
+      send.classList.remove("on");
+      lastRow = document.createElement("div");
+      lastRow.className = "row me pop";
+      lastRow.innerHTML = '<div class="bubble"></div>';
+      lastRow.firstChild.textContent = b.text;
+      feed.appendChild(lastRow);
+      await sleep(900);
+    }
+
+    else if (b.t === "meta" && lastRow){
+      const m = document.createElement("div");
+      m.className = "meta pop";
+      m.innerHTML = (b.vist ? '<b>✓✓</b> ' : '') + b.text;
+      lastRow.appendChild(m);
+    }
+
+    else if (b.t === "ai" || b.t === "aiCut"){
+      const ai = document.createElement("div");
+      ai.className = "ai pop" + (b.wa ? " wa" : "");
+      ai.innerHTML = '<div class="mark">' + (b.wa ? "✆" : "✳") +
+        '</div><div class="body"><div class="dots"><i></i><i></i><i></i></div></div>';
+      feed.appendChild(ai);
+      sfx.clockOn();
+      await sleep(b.think || 1600);
+      sfx.clockOff();
+      if (me !== run) return;
+      const body = ai.querySelector(".body");
+      if (b.t === "ai"){
+        body.innerHTML = "";
+        await type(body, b.text, 22);
+        if (me !== run) return;
+        body.querySelector(".caret")?.remove();
+        await sleep(1100);
+      } else {
+        body.innerHTML = '<div class="lead"></div>';
+        const lead = body.querySelector(".lead");
+        await type(lead, b.lead, 22);
+        if (me !== run) return;
+        await sleep(500);
+        if (me !== run) return;
+        lead.querySelector(".caret")?.remove();
+        const card = document.createElement("div");
+        card.className = "upsell pop";
+        card.innerHTML = '<h4></h4><p></p><button></button>';
+        card.querySelector("h4").textContent = b.card.h;
+        card.querySelector("p").textContent = b.card.p;
+        card.querySelector("button").textContent = b.card.cta;
+        body.appendChild(card);
+      }
+    }
+
+    else if (b.t === "note"){
+      if (b.lead) await sleep(b.lead);
+      if (me !== run) return;
+      const n = document.createElement("div");
+      n.className = "note" + (b.kind === "of" ? " of" : "");
+      n.innerHTML = '<div class="wico">' + (b.kind === "of" ? "i" : "✆") +
+        '</div><div><div class="who"></div><div class="msg"></div></div>';
+      n.querySelector(".who").textContent = b.who;
+      n.querySelector(".msg").textContent = b.msg;
+      notes.appendChild(n);
+      if (b.kind === "of") sfx.oficial(); else sfx.note();
+      requestAnimationFrame(() => n.classList.add("on"));
+      await sleep(b.wait || 2300);
+    }
+
+    else if (b.t === "batt"){ pct.textContent = b.pct; await sleep(900); }
+    else if (b.t === "wait"){ await sleep(b.ms); }
+    else if (b.t === "off"){
+      sfx.clockOff();
+      sfx.power();
+      off.classList.add("on");
+      await sleep(2600);
+      if (me !== run) return;
+      off.classList.add("gone");
+      await sleep(1800);
+    }
+  }
+}
+
+async function showSlate(n, titulo, me){
+  sfx.slate();
+  $("snum").textContent = n;
+  $("sttl").textContent = titulo;
+  slate.classList.add("on","fade");
+  await sleep(2400);
+  slate.classList.remove("on","fade");
+  if (me !== run) return false;
+  await sleep(300);
+  return me === run;
+}
+
+async function showPhoto(me){
+  if (!photoURL) return me === run;
+  photo.classList.add("on");
+  await sleep(2200);
+  photo.classList.remove("on");
+  if (me !== run) return false;
+  await sleep(300);
+  return me === run;
+}
+
+async function play(){
+  const me = ++run;
+  slate.classList.remove("on");
+  photo.classList.remove("on");
+
+  if (mode === "one"){
+    if (!(await showSlate(only + 1, CASES[only].titulo, me))) return;
+    await runCase(CASES[only], me);
+    if (me !== run) return;
+    await sleep(1200);
+    if (me === run) play();
+    return;
+  }
+
+  for (let i = 0; i < CASES.length; i++){
+    if (!(await showSlate(i + 1, CASES[i].titulo, me))) return;
+    await runCase(CASES[i], me);
+    if (me !== run) return;
+    if (i < CASES.length - 1){
+      if (!(await showPhoto(me))) return;
+    }
+  }
+  await sleep(1500);
+  if (me === run) play();
+}
+
+/* ── controles ────────────────────────────────────────────── */
+$("all").onclick = () => { mode = "all"; marca("all"); play(); };
+document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {
+  mode = "one"; only = +b.dataset.c; marca(b); play();
+});
+function marca(el){
+  const t = typeof el === "string" ? $(el) : el;
+  $("all").classList.toggle("sel", t === $("all"));
+  document.querySelectorAll("[data-c]").forEach(x => x.classList.toggle("sel", x === t));
+}
+document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => {
+  speed = +b.dataset.s;
+  document.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("sel", x === b));
+});
+$("file").onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (photoURL) URL.revokeObjectURL(photoURL);
+  photoURL = URL.createObjectURL(f);
+  pimg.src = photoURL;
+};
+$("sound").onclick = toggleSound;
+$("safe").onclick = toggleSafe;
+
+function toggleSound(){
+  sfxOn = !sfxOn;
+  ac();
+  if (master) master.gain.value = sfxOn ? 0.35 : 0;
+  if (!sfxOn) sfx.clockOff();
+  $("sound").classList.toggle("sel", sfxOn);
+  $("sound").textContent = (sfxOn ? "🔊" : "🔇") + " Sonido (M)";
+}
+$("grid").onclick = toggleGuides;
+$("again").onclick = play;
+$("hide").onclick = toggleUI;
+
+function toggleSafe(){ $("safe").classList.toggle("sel", canvas.classList.toggle("safe")); }
+function toggleGuides(){ $("grid").classList.toggle("sel", guides.classList.toggle("on")); }
+function toggleUI(){ $("ui").classList.toggle("hide"); fit(); }
+
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (k === "r") play();
+  if (k === "h") toggleUI();
+  if (k === "s") toggleSafe();
+  if (k === "g") toggleGuides();
+  if (k === "m") toggleSound();
+});
+
+fit();
+play();
 </script>
-</body>
-</html>
